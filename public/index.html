@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Groundnut & Peanut Butter Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#F1E6CF; --bg-alt:#E7D8B7; --paper:#FBF6EA; --ink:#2E2115; --ink-soft:#6B5A47;
+    --line:#D6C29B; --groundnut:#8B4C2E; --groundnut-bg:#F0DCCB; --pb:#B5791E; --pb-bg:#F3E3BE;
+    --money:#4B7345; --money-bg:#E1EBDD; --debt:#A23B2E; --debt-bg:#F5DFDA;
+    --shadow:0 1px 2px rgba(46,33,21,0.08); --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;padding-bottom:76px;}
+  .figures{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  h1,h2,h3{font-family:'Zilla Slab',serif;font-weight:700;margin:0;}
+  header.top{position:sticky;top:0;z-index:20;background:var(--ink);color:var(--paper);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+  header.top .brand{display:flex;align-items:center;gap:10px;}
+  header.top .brand-mark{width:34px;height:34px;border-radius:50%;background:var(--pb);display:flex;align-items:center;justify-content:center;font-family:'Zilla Slab',serif;font-weight:700;color:var(--ink);font-size:16px;}
+  header.top h1{font-size:18px;color:var(--paper);}
+  header.top .sub{font-size:11px;color:#C9BBA4;margin-top:1px;}
+  .header-actions{display:flex;align-items:center;gap:8px;}
+  .icon-btn{background:none;border:1px solid rgba(255,255,255,0.25);color:var(--paper);width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .icon-btn:active{transform:scale(0.95);}
+  .sync-strip{background:var(--bg-alt);color:var(--ink-soft);font-size:11.5px;text-align:center;padding:5px 10px;}
+  .sync-strip.err{background:var(--debt-bg);color:var(--debt);}
+  nav.tabs-desktop{display:flex;gap:4px;background:var(--paper);padding:0 12px;border-bottom:1px solid var(--line);position:sticky;top:62px;z-index:19;overflow-x:auto;}
+  nav.tabs-desktop button{background:none;border:none;padding:12px 16px;font-size:14px;font-weight:600;color:var(--ink-soft);cursor:pointer;position:relative;white-space:nowrap;font-family:'Inter',sans-serif;}
+  nav.tabs-desktop button.active{color:var(--groundnut);}
+  nav.tabs-desktop .indicator{position:absolute;bottom:0;left:0;height:3px;background:var(--groundnut);border-radius:3px 3px 0 0;transition:transform 0.28s cubic-bezier(.4,0,.2,1),width 0.28s cubic-bezier(.4,0,.2,1);}
+  nav.tabs-mobile{position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--paper);border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 8px rgba(0,0,0,0.08);}
+  nav.tabs-mobile button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;color:var(--ink-soft);cursor:pointer;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;}
+  nav.tabs-mobile button .ic{font-size:19px;line-height:1;}
+  nav.tabs-mobile button.active{color:var(--groundnut);}
+  main{max-width:760px;margin:0 auto;padding:16px;}
+  .tabpanel{display:none;}
+  .tabpanel.active{display:block;animation:tabIn 0.32s cubic-bezier(.4,0,.2,1);}
+  @keyframes tabIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .card h2{font-size:16px;margin-bottom:12px;color:var(--ink);}
+  .card h2 .tag{font-size:11px;font-weight:500;font-family:'Inter',sans-serif;color:var(--ink-soft);}
+  .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+  .metric{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;}
+  .metric .label{font-size:11.5px;color:var(--ink-soft);font-weight:500;margin-bottom:4px;}
+  .metric .value{font-size:20px;}
+  .metric.profit .value{color:var(--money);}
+  .metric.debt .value{color:var(--debt);}
+  label{display:block;font-size:12.5px;font-weight:500;color:var(--ink-soft);margin:10px 0 4px;}
+  label:first-child{margin-top:0;}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:#fff;color:var(--ink);}
+  input:focus,select:focus{outline:2px solid var(--groundnut);outline-offset:1px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;border:none;font-weight:600;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .btn-primary{background:var(--groundnut);color:#fff;width:100%;margin-top:12px;}
+  .btn-primary:active{transform:scale(0.98);}
+  .btn-ghost{background:none;border:1px solid var(--line);color:var(--ink-soft);}
+  .btn-sm{padding:6px 10px;font-size:12.5px;border-radius:6px;}
+  .btn-paid{background:var(--money);color:#fff;}
+  .btn-del{background:none;color:var(--debt);border:1px solid var(--debt-bg);}
+  .entry-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .entry-row:last-child{border-bottom:none;}
+  .entry-main{flex:1;min-width:0;}
+  .entry-title{font-size:14px;font-weight:600;}
+  .entry-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+  .entry-actions{display:flex;gap:6px;flex-shrink:0;}
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;margin-right:6px;}
+  .pill-groundnut{background:var(--groundnut-bg);color:var(--groundnut);}
+  .pill-pb{background:var(--pb-bg);color:#7A5314;}
+  .pill-shared{background:var(--bg-alt);color:var(--ink-soft);}
+  .stamp{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;border:2px dashed var(--money);color:var(--money);font-family:'Zilla Slab',serif;font-weight:700;font-size:11px;transform:rotate(-8deg);letter-spacing:0.5px;flex-shrink:0;}
+  .empty{text-align:center;padding:24px 12px;color:var(--ink-soft);font-size:13.5px;}
+  .section-total{display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:6px;border-top:1px solid var(--line);font-size:13.5px;font-weight:600;}
+  .chart-wrap{position:relative;width:100%;height:230px;margin-top:6px;}
+  .legend-row{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-soft);margin-top:8px;}
+  .legend-dot{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(46,33,21,0.45);z-index:50;display:none;align-items:flex-end;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper);width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:20px;max-height:85vh;overflow-y:auto;animation:modalUp 0.25s cubic-bezier(.4,0,.2,1);}
+  @media (min-width:640px){.modal-overlay{align-items:center;} .modal{border-radius:16px;}}
+  @keyframes modalUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .modal-close{background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;}
+  .report-box{background:var(--bg-alt);border-radius:8px;padding:12px;margin-top:10px;}
+  .report-box table{width:100%;border-collapse:collapse;font-size:13px;}
+  .report-box td{padding:5px 0;}
+  .report-box td:last-child{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  @media (min-width:760px){body{padding-bottom:20px;} nav.tabs-mobile{display:none;} .metrics{grid-template-columns:repeat(4,1fr);}}
+  @media (max-width:759px){nav.tabs-desktop{display:none;}}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:all 0.25s;z-index:60;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media (min-width:760px){.toast{bottom:24px;}}
+
+  /* Login screen */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .auth-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 4px 16px rgba(46,33,21,0.12);}
+  .auth-card .brand-mark{width:44px;height:44px;border-radius:50%;background:var(--pb);display:flex;align-items:center;justify-content:center;font-family:'Zilla Slab',serif;font-weight:700;color:var(--ink);font-size:19px;margin:0 auto 10px;}
+  .auth-card h1{text-align:center;font-size:20px;margin-bottom:4px;}
+  .auth-card .sub{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;}
+  .auth-toggle{display:flex;gap:0;margin-bottom:16px;background:var(--bg-alt);border-radius:8px;padding:3px;}
+  .auth-toggle button{flex:1;padding:8px;border:none;background:none;border-radius:6px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:'Inter',sans-serif;}
+  .auth-toggle button.active{background:var(--paper);color:var(--ink);box-shadow:var(--shadow);}
+  .auth-error{background:var(--debt-bg);color:var(--debt);font-size:12.5px;padding:8px 10px;border-radius:8px;margin-top:10px;}
+
+  /* Chatbot */
+  .chat-fab{position:fixed;bottom:84px;right:16px;width:52px;height:52px;border-radius:50%;background:var(--groundnut);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(46,33,21,0.25);z-index:30;}
+  @media (min-width:760px){.chat-fab{bottom:24px;}}
+  .chat-panel{position:fixed;bottom:0;right:0;left:0;z-index:55;background:var(--paper);border-radius:16px 16px 0 0;max-height:70vh;display:none;flex-direction:column;box-shadow:0 -4px 20px rgba(0,0,0,0.15);}
+  .chat-panel.open{display:flex;}
+  @media (min-width:520px){.chat-panel{left:auto;width:380px;bottom:24px;border-radius:16px;max-height:520px;}}
+  .chat-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);}
+  .chat-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+  .chat-msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:13.5px;line-height:1.4;}
+  .chat-msg.bot{background:var(--bg-alt);align-self:flex-start;}
+  .chat-msg.user{background:var(--groundnut);color:#fff;align-self:flex-end;}
+  .chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);}
+  .chat-input-row input{flex:1;}
+  .chat-input-row button{background:var(--groundnut);color:#fff;border:none;border-radius:8px;padding:0 14px;font-weight:600;cursor:pointer;}
+  .chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;}
+  .chat-suggestions button{background:var(--bg-alt);border:none;border-radius:14px;padding:5px 10px;font-size:11.5px;color:var(--ink-soft);cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand-mark">GB</div>
+    <h1>Groundnut Ledger</h1>
+    <div class="sub">Shared ledger for the family business</div>
+    <div class="auth-toggle">
+      <button id="toggleLogin" class="active">Log in</button>
+      <button id="toggleRegister">Create account</button>
+    </div>
+    <div id="loginForm">
+      <label for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="you@example.com">
+      <label for="loginPassword">Password</label><input type="password" id="loginPassword">
+      <button class="btn btn-primary" id="loginBtn">Log in</button>
+    </div>
+    <div id="registerForm" style="display:none;">
+      <label for="regName">Your name</label><input type="text" id="regName" placeholder="e.g. Glen">
+      <label for="regEmail">Email</label><input type="email" id="regEmail">
+      <label for="regPassword">Password</label><input type="password" id="regPassword" placeholder="At least 6 characters">
+      <button class="btn btn-primary" id="registerBtn">Create account</button>
+    </div>
+    <div id="authError" class="auth-error" style="display:none;"></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">GB</div>
+      <div><h1>Groundnut Ledger</h1><div class="sub" id="userGreeting"></div></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="syncBtn" title="Sync now">&#8635;</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">&#9881;</button>
+      <button class="icon-btn" id="logoutBtn" title="Log out">&#10162;</button>
+    </div>
+  </header>
+  <div class="sync-strip" id="syncStrip">Connecting&hellip;</div>
+
+  <nav class="tabs-desktop" id="tabsDesktop">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="sales">Sales</button>
+    <button data-tab="debts">Debts</button>
+    <button data-tab="expenses">Expenses</button>
+    <button data-tab="reports">Reports</button>
+    <div class="indicator" id="indicator"></div>
+  </nav>
+
+  <main id="app"><div class="empty">Loading your ledger&hellip;</div></main>
+
+  <nav class="tabs-mobile" id="tabsMobile">
+    <button data-tab="dashboard" class="active"><span class="ic">&#9737;</span>Dashboard</button>
+    <button data-tab="sales"><span class="ic">&#128181;</span>Sales</button>
+    <button data-tab="debts"><span class="ic">&#128221;</span>Debts</button>
+    <button data-tab="expenses"><span class="ic">&#128230;</span>Expenses</button>
+    <button data-tab="reports"><span class="ic">&#128202;</span>Reports</button>
+  </nav>
+
+  <button class="chat-fab" id="chatFab" title="Ask about your business">&#128172;</button>
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-head">
+      <h2 style="font-size:15px;">Ask your ledger</h2>
+      <button class="modal-close" id="closeChat">&times;</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-msg bot">Hi! Ask me things like "how much profit this month" or "who owes me money" — I'll answer from your real sales, debts, and expenses.</div>
+    </div>
+    <div class="chat-suggestions">
+      <button data-q="How much profit this month?">Profit this month</button>
+      <button data-q="Who owes me money?">Who owes me</button>
+      <button data-q="How much did I sell today?">Sales today</button>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Type a question&hellip;">
+      <button id="chatSendBtn">Send</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <div class="modal-head"><h2 style="font-size:17px;">Selling prices</h2><button class="modal-close" id="closeSettings">&times;</button></div>
+      <label>Groundnuts &mdash; price per piece (KSh)</label><input type="number" id="priceGroundnut" min="0" step="1">
+      <label>Peanut butter &mdash; price per jar (KSh)</label><input type="number" id="pricePB" min="0" step="1">
+      <button class="btn btn-primary" id="saveSettings">Save prices</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+
+var TOKEN_KEY = 'groundnut_ledger_token';
+var state = { settings:{price_groundnut:100,price_pb:600}, sales:[], debts:[], expenses:[], user:null };
+var activeTab = 'dashboard';
+var charts = {};
+var lastSyncTs = null;
+
+function uid(){ return Date.now().toString(36); }
+function money(n){ n = Math.round(n||0); return 'KSh ' + n.toLocaleString('en-KE'); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ var dt = new Date(d); return dt.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}); }
+function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},1800); }
+function setSyncStrip(text,isErr){ var el=document.getElementById('syncStrip'); el.textContent=text; el.classList.toggle('err',!!isErr); }
+function relTime(ts){ if(!ts) return 'never'; var diff=Math.round((Date.now()-ts)/1000); if(diff<5) return 'just now'; if(diff<60) return diff+'s ago'; if(diff<3600) return Math.round(diff/60)+'m ago'; return Math.round(diff/3600)+'h ago'; }
+function escapeHtml(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function getToken(){ return localStorage.getItem(TOKEN_KEY); }
+function setToken(t){ localStorage.setItem(TOKEN_KEY, t); }
+function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  var token = getToken();
+  if(token) opts.headers['Authorization'] = 'Bearer ' + token;
+  var res = await fetch('/api'+path, opts);
+  if(res.status === 401){ clearToken(); showAuthScreen(); throw new Error('Session expired'); }
+  var data = await res.json().catch(function(){ return {}; });
+  if(!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+/* ---------- AUTH SCREEN ---------- */
+function showAuthScreen(){
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+}
+function showApp(){
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+}
+document.getElementById('toggleLogin').addEventListener('click', function(){
+  document.getElementById('toggleLogin').classList.add('active');
+  document.getElementById('toggleRegister').classList.remove('active');
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('registerForm').style.display = 'none';
+});
+document.getElementById('toggleRegister').addEventListener('click', function(){
+  document.getElementById('toggleRegister').classList.add('active');
+  document.getElementById('toggleLogin').classList.remove('active');
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('loginForm').style.display = 'none';
+});
+function showAuthError(msg){
+  var el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+document.getElementById('loginBtn').addEventListener('click', async function(){
+  document.getElementById('authError').style.display='none';
+  try{
+    var data = await api('/login', {method:'POST', body: JSON.stringify({
+      email: document.getElementById('loginEmail').value.trim(),
+      password: document.getElementById('loginPassword').value
+    })});
+    setToken(data.token);
+    state.user = data.user;
+    await bootApp();
+  }catch(e){ showAuthError(e.message); }
+});
+document.getElementById('registerBtn').addEventListener('click', async function(){
+  document.getElementById('authError').style.display='none';
+  try{
+    var data = await api('/register', {method:'POST', body: JSON.stringify({
+      name: document.getElementById('regName').value.trim(),
+      email: document.getElementById('regEmail').value.trim(),
+      password: document.getElementById('regPassword').value
+    })});
+    setToken(data.token);
+    state.user = data.user;
+    await bootApp();
+  }catch(e){ showAuthError(e.message); }
+});
+document.getElementById('logoutBtn').addEventListener('click', function(){
+  clearToken();
+  showAuthScreen();
+});
+
+/* ---------- DATA LOADING ---------- */
+async function loadAll(){
+  var [settings, sales, debts, expenses] = await Promise.all([
+    api('/settings'), api('/sales'), api('/debts'), api('/expenses')
+  ]);
+  state.settings = settings;
+  state.sales = sales;
+  state.debts = debts;
+  state.expenses = expenses;
+  lastSyncTs = Date.now();
+  setSyncStrip('Synced ' + relTime(lastSyncTs));
+}
+
+setInterval(async function(){
+  if(!getToken()) return;
+  try{ await loadAll(); switchTab(activeTab); }
+  catch(e){ setSyncStrip('Could not reach the server', true); }
+}, 15000);
+
+function productPrice(p){ return p==='peanutbutter' ? Number(state.settings.price_pb) : Number(state.settings.price_groundnut); }
+function productLabel(p){ return p==='peanutbutter' ? 'Peanut butter' : 'Groundnuts'; }
+function productUnit(p){ return p==='peanutbutter' ? 'jar' : 'piece'; }
+function pillClass(b){ if(b==='peanutbutter') return 'pill-pb'; if(b==='groundnuts') return 'pill-groundnut'; return 'pill-shared'; }
+function businessLabel(b){ if(b==='peanutbutter') return 'Peanut butter'; if(b==='groundnuts') return 'Groundnuts'; return 'Shared / overhead'; }
+var EXPENSE_CATEGORIES = { groundnuts:['Raw groundnuts (kg)','Containers & lids','Transport'], peanutbutter:['Raw groundnuts (kg)','Jars','Labour'], shared:['Electricity','Other'] };
+
+function totals(){
+  var revGn=0,revPb=0,qtyGn=0,qtyPb=0;
+  state.sales.forEach(function(s){ var t=Number(s.qty)*Number(s.unit_price); if(s.product==='peanutbutter'){revPb+=t;qtyPb+=Number(s.qty);} else {revGn+=t;qtyGn+=Number(s.qty);} });
+  var expByBiz={groundnuts:0,peanutbutter:0,shared:0};
+  state.expenses.forEach(function(e){ expByBiz[e.business]=(expByBiz[e.business]||0)+Number(e.amount); });
+  var totalExp=expByBiz.groundnuts+expByBiz.peanutbutter+expByBiz.shared;
+  var totalRev=revGn+revPb;
+  var outstanding=state.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+Number(d.amount);},0);
+  return {revGn:revGn,revPb:revPb,qtyGn:qtyGn,qtyPb:qtyPb,expByBiz:expByBiz,totalExp:totalExp,totalRev:totalRev,profit:totalRev-totalExp,outstanding:outstanding};
+}
+function last14Days(){ var days=[]; for(var i=13;i>=0;i--){ var d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); } return days; }
+function metricCard(label,value,cls){ return '<div class="metric '+cls+'"><div class="label">'+label+'</div><div class="value figures">'+value+'</div></div>'; }
+function wrapPanel(id,inner){ return '<div class="tabpanel active" id="panel-'+id+'">'+inner+'</div>'; }
+
+/* ---------- DASHBOARD ---------- */
+function renderDashboard(){
+  var t = totals();
+  var days = last14Days();
+  var gnByDay={}, pbByDay={};
+  days.forEach(function(d){ gnByDay[d]=0; pbByDay[d]=0; });
+  state.sales.forEach(function(s){
+    var d = new Date(s.sale_date).toISOString().slice(0,10);
+    if(gnByDay.hasOwnProperty(d)){ if(s.product==='peanutbutter') pbByDay[d]+=Number(s.qty)*Number(s.unit_price); else gnByDay[d]+=Number(s.qty)*Number(s.unit_price); }
+  });
+  var html='';
+  html+='<div class="metrics">'+metricCard('Total revenue',money(t.totalRev),'')+metricCard('Total expenses',money(t.totalExp),'')+metricCard('Profit',money(t.profit),'profit')+metricCard('Outstanding debt',money(t.outstanding),'debt')+'</div>';
+  html+='<div class="card"><h2>Sales trend <span class="tag">last 14 days</span></h2><div class="chart-wrap"><canvas id="trendChart"></canvas></div><div class="legend-row"><span><span class="legend-dot" style="background:#8B4C2E;"></span>Groundnuts</span><span><span class="legend-dot" style="background:#B5791E;"></span>Peanut butter</span></div></div>';
+  html+='<div class="card"><h2>Where the money goes</h2>';
+  if(t.totalExp===0){ html+='<p class="empty">No expenses logged yet.</p>'; }
+  else{ html+='<div class="chart-wrap" style="height:200px;"><canvas id="expenseChart"></canvas></div><div class="legend-row"><span><span class="legend-dot" style="background:#8B4C2E;"></span>Groundnuts '+money(t.expByBiz.groundnuts)+'</span><span><span class="legend-dot" style="background:#B5791E;"></span>Peanut butter '+money(t.expByBiz.peanutbutter)+'</span><span><span class="legend-dot" style="background:#6B5A47;"></span>Shared '+money(t.expByBiz.shared)+'</span></div>'; }
+  html+='</div>';
+  document.getElementById('app').innerHTML = wrapPanel('dashboard', html);
+
+  if(charts.trend) charts.trend.destroy();
+  var ctx1=document.getElementById('trendChart');
+  charts.trend = new Chart(ctx1,{type:'line',data:{labels:days.map(function(d){return new Date(d+'T00:00:00').toLocaleDateString('en-KE',{day:'numeric',month:'short'});}),datasets:[
+    {label:'Groundnuts',data:days.map(function(d){return gnByDay[d];}),borderColor:'#8B4C2E',backgroundColor:'rgba(139,76,46,0.1)',fill:true,tension:0.3,pointRadius:2,borderWidth:2},
+    {label:'Peanut butter',data:days.map(function(d){return pbByDay[d];}),borderColor:'#B5791E',backgroundColor:'rgba(181,121,30,0.1)',fill:true,tension:0.3,pointRadius:2,borderWidth:2,borderDash:[5,3]}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:45,autoSkip:true,font:{size:10}},grid:{display:false}},y:{ticks:{callback:function(v){return 'KSh '+v;},font:{size:10}},grid:{color:'#E7D8B7'}}}}});
+
+  if(charts.exp) charts.exp.destroy();
+  var ctx2=document.getElementById('expenseChart');
+  if(ctx2){ charts.exp = new Chart(ctx2,{type:'doughnut',data:{labels:['Groundnuts','Peanut butter','Shared'],datasets:[{data:[t.expByBiz.groundnuts,t.expByBiz.peanutbutter,t.expByBiz.shared],backgroundColor:['#8B4C2E','#B5791E','#6B5A47'],borderColor:'#FBF6EA',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}}); }
+}
+
+/* ---------- SALES ---------- */
+function renderSales(){
+  var t = totals();
+  var html='<div class="card"><h2>Log a sale</h2>';
+  html+='<label>Date</label><input type="date" id="saleDate" value="'+todayStr()+'">';
+  html+='<label>Product</label><select id="saleProduct"><option value="groundnuts">Groundnuts (KSh '+state.settings.price_groundnut+'/piece)</option><option value="peanutbutter">Peanut butter (KSh '+state.settings.price_pb+'/jar)</option></select>';
+  html+='<label>Quantity sold</label><input type="number" id="saleQty" min="1" step="1">';
+  html+='<div class="section-total" id="saleTotalPreview"><span>Total</span><span class="figures">KSh 0</span></div>';
+  html+='<button class="btn btn-primary" id="addSaleBtn">Add sale</button></div>';
+  html+='<div class="metrics">'+metricCard('Groundnuts sold', t.qtyGn+' pieces','')+metricCard('Peanut butter sold', t.qtyPb+' jars','')+'</div>';
+  html+='<div class="card"><h2>Sales log <span class="tag">'+state.sales.length+' entries</span></h2>';
+  if(state.sales.length===0){ html+='<p class="empty">No sales logged yet.</p>'; }
+  else{
+    state.sales.forEach(function(s){
+      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(s.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(s.product)+'</span><div class="entry-title figures">'+money(Number(s.qty)*Number(s.unit_price))+'</div><div class="entry-sub">'+s.qty+' '+productUnit(s.product)+(Number(s.qty)===1?'':'s')+' &middot; '+fmtDate(s.sale_date)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-del" data-del-sale="'+s.id+'">Delete</button></div></div>';
+    });
+    html+='<div class="section-total"><span>Total revenue</span><span class="figures">'+money(t.totalRev)+'</span></div>';
+  }
+  html+='</div>';
+  document.getElementById('app').innerHTML = wrapPanel('sales', html);
+
+  var qtyInput=document.getElementById('saleQty'), prodSelect=document.getElementById('saleProduct');
+  function updatePreview(){ var qty=parseFloat(qtyInput.value)||0; document.getElementById('saleTotalPreview').innerHTML='<span>Total</span><span class="figures">'+money(qty*productPrice(prodSelect.value))+'</span>'; }
+  qtyInput.addEventListener('input', updatePreview);
+  prodSelect.addEventListener('change', updatePreview);
+  document.getElementById('addSaleBtn').addEventListener('click', async function(){
+    var qty=parseFloat(qtyInput.value);
+    if(!qty || qty<=0){ showToast('Enter a quantity above 0'); return; }
+    try{
+      await api('/sales',{method:'POST', body: JSON.stringify({ sale_date: document.getElementById('saleDate').value||todayStr(), product: prodSelect.value, qty: qty, unit_price: productPrice(prodSelect.value) })});
+      await loadAll(); showToast('Sale logged'); renderSales();
+    }catch(e){ showToast(e.message); }
+  });
+  document.querySelectorAll('[data-del-sale]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      try{ await api('/sales/'+btn.getAttribute('data-del-sale'),{method:'DELETE'}); await loadAll(); renderSales(); }catch(e){ showToast(e.message); }
+    });
+  });
+}
+
+/* ---------- DEBTS ---------- */
+function renderDebts(){
+  var unpaid = state.debts.filter(function(d){return !d.paid;});
+  var paid = state.debts.filter(function(d){return d.paid;});
+  var outstanding = unpaid.reduce(function(a,d){return a+Number(d.amount);},0);
+  var html='<div class="card"><h2>Add a debt</h2>';
+  html+='<label>Person\'s name</label><input type="text" id="debtName" placeholder="e.g. Mama Wanjiru">';
+  html+='<div class="row2"><div><label>Product</label><select id="debtProduct"><option value="groundnuts">Groundnuts</option><option value="peanutbutter">Peanut butter</option></select></div><div><label>Quantity owed</label><input type="number" id="debtQty" min="1" step="1"></div></div>';
+  html+='<label>Amount owed (KSh)</label><input type="number" id="debtAmount" min="0" step="1">';
+  html+='<label>Date</label><input type="date" id="debtDate" value="'+todayStr()+'">';
+  html+='<button class="btn btn-primary" id="addDebtBtn">Add debt</button></div>';
+  html+='<div class="metrics" style="grid-template-columns:1fr;">'+metricCard('Outstanding debt',money(outstanding),'debt')+'</div>';
+  html+='<div class="card"><h2>Unpaid <span class="tag">'+unpaid.length+'</span></h2>';
+  if(unpaid.length===0){ html+='<p class="empty">No outstanding debts. Nice.</p>'; }
+  else{
+    unpaid.forEach(function(d){
+      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(d.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(d.product)+'</span><div class="entry-title">'+escapeHtml(d.name)+'</div><div class="entry-sub figures">'+money(d.amount)+' &middot; '+d.qty+' '+productUnit(d.product)+(Number(d.qty)===1?'':'s')+' &middot; '+fmtDate(d.debt_date)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-paid" data-pay-debt="'+d.id+'">Mark paid</button><button class="btn btn-sm btn-del" data-del-debt="'+d.id+'">Delete</button></div></div>';
+    });
+  }
+  html+='</div><div class="card"><h2>Paid history <span class="tag">'+paid.length+'</span></h2>';
+  if(paid.length===0){ html+='<p class="empty">Paid debts will show up here.</p>'; }
+  else{
+    paid.forEach(function(d){
+      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(d.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(d.product)+'</span><div class="entry-title">'+escapeHtml(d.name)+'</div><div class="entry-sub figures">'+money(d.amount)+' &middot; paid '+fmtDate(d.paid_date||d.debt_date)+'</div></div><div class="stamp">PAID</div></div>';
+    });
+  }
+  html+='</div>';
+  document.getElementById('app').innerHTML = wrapPanel('debts', html);
+
+  var qtyInput=document.getElementById('debtQty'), prodSelect=document.getElementById('debtProduct'), amtInput=document.getElementById('debtAmount');
+  function autoAmount(){ var qty=parseFloat(qtyInput.value)||0; amtInput.value = qty ? (qty*productPrice(prodSelect.value)) : ''; }
+  qtyInput.addEventListener('input', autoAmount);
+  prodSelect.addEventListener('change', autoAmount);
+  document.getElementById('addDebtBtn').addEventListener('click', async function(){
+    var name=document.getElementById('debtName').value.trim();
+    var amount=parseFloat(amtInput.value)||0;
+    if(!name){ showToast('Enter the person\'s name'); return; }
+    if(!amount||amount<=0){ showToast('Enter an amount above 0'); return; }
+    try{
+      await api('/debts',{method:'POST', body: JSON.stringify({ name:name, product:prodSelect.value, qty:parseFloat(qtyInput.value)||0, amount:amount, debt_date: document.getElementById('debtDate').value||todayStr() })});
+      await loadAll(); showToast('Debt added'); renderDebts();
+    }catch(e){ showToast(e.message); }
+  });
+  document.querySelectorAll('[data-pay-debt]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      try{ await api('/debts/'+btn.getAttribute('data-pay-debt')+'/pay',{method:'PATCH'}); await loadAll(); showToast('Marked as paid'); renderDebts(); }catch(e){ showToast(e.message); }
+    });
+  });
+  document.querySelectorAll('[data-del-debt]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      try{ await api('/debts/'+btn.getAttribute('data-del-debt'),{method:'DELETE'}); await loadAll(); renderDebts(); }catch(e){ showToast(e.message); }
+    });
+  });
+}
+
+/* ---------- EXPENSES ---------- */
+function renderExpenses(){
+  var t = totals();
+  var html='<div class="card"><h2>Add an expense</h2>';
+  html+='<label>Business</label><select id="expBusiness"><option value="groundnuts">Groundnuts</option><option value="peanutbutter">Peanut butter</option><option value="shared">Shared / overhead</option></select>';
+  html+='<label>Category</label><select id="expCategory"></select>';
+  html+='<label>Note (optional)</label><input type="text" id="expDesc">';
+  html+='<div class="row2"><div><label>Amount (KSh)</label><input type="number" id="expAmount" min="0" step="1"></div><div><label>Date</label><input type="date" id="expDate" value="'+todayStr()+'"></div></div>';
+  html+='<button class="btn btn-primary" id="addExpBtn">Add expense</button></div>';
+  html+='<div class="metrics">'+metricCard('Groundnuts biz',money(t.expByBiz.groundnuts),'')+metricCard('Peanut butter biz',money(t.expByBiz.peanutbutter),'')+metricCard('Shared / electricity',money(t.expByBiz.shared),'')+metricCard('Total expenses',money(t.totalExp),'debt')+'</div>';
+  ['groundnuts','peanutbutter','shared'].forEach(function(biz){
+    var items = state.expenses.filter(function(e){return e.business===biz;});
+    html+='<div class="card"><h2>'+businessLabel(biz)+' expenses <span class="tag">'+items.length+'</span></h2>';
+    if(items.length===0){ html+='<p class="empty">Nothing logged yet.</p>'; }
+    else{
+      items.forEach(function(e){
+        html+='<div class="entry-row"><div class="entry-main"><span class="pill '+pillClass(biz)+'">'+e.category+'</span><div class="entry-title figures">'+money(e.amount)+'</div><div class="entry-sub">'+(e.description?escapeHtml(e.description)+' &middot; ':'')+fmtDate(e.expense_date)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-del" data-del-exp="'+e.id+'">Delete</button></div></div>';
+      });
+      html+='<div class="section-total"><span>Subtotal</span><span class="figures">'+money(t.expByBiz[biz])+'</span></div>';
+    }
+    html+='</div>';
+  });
+  document.getElementById('app').innerHTML = wrapPanel('expenses', html);
+
+  var bizSelect=document.getElementById('expBusiness'), catSelect=document.getElementById('expCategory');
+  function refreshCats(){ catSelect.innerHTML = EXPENSE_CATEGORIES[bizSelect.value].map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join(''); }
+  bizSelect.addEventListener('change', refreshCats);
+  refreshCats();
+  document.getElementById('addExpBtn').addEventListener('click', async function(){
+    var amount=parseFloat(document.getElementById('expAmount').value);
+    if(!amount||amount<=0){ showToast('Enter an amount above 0'); return; }
+    try{
+      await api('/expenses',{method:'POST', body: JSON.stringify({ business:bizSelect.value, category:catSelect.value, description:document.getElementById('expDesc').value.trim(), amount:amount, expense_date: document.getElementById('expDate').value||todayStr() })});
+      await loadAll(); showToast('Expense logged'); renderExpenses();
+    }catch(e){ showToast(e.message); }
+  });
+  document.querySelectorAll('[data-del-exp]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      try{ await api('/expenses/'+btn.getAttribute('data-del-exp'),{method:'DELETE'}); await loadAll(); renderExpenses(); }catch(e){ showToast(e.message); }
+    });
+  });
+}
+
+/* ---------- REPORTS ---------- */
+function renderReports(){
+  var html='<div class="card"><h2>Generate a report</h2><div class="row2"><div><label>From</label><input type="date" id="repFrom" value="'+monthAgo()+'"></div><div><label>To</label><input type="date" id="repTo" value="'+todayStr()+'"></div></div><button class="btn btn-primary" id="genReportBtn">Generate report</button><div id="reportOutput"></div></div>';
+  html+='<div class="card"><h2>Monthly comparison</h2><div class="chart-wrap"><canvas id="monthChart"></canvas></div><div class="legend-row"><span><span class="legend-dot" style="background:#8B4C2E;"></span>Groundnuts</span><span><span class="legend-dot" style="background:#B5791E;"></span>Peanut butter</span></div></div>';
+  document.getElementById('app').innerHTML = wrapPanel('reports', html);
+  document.getElementById('genReportBtn').addEventListener('click', function(){ generateReport(document.getElementById('repFrom').value, document.getElementById('repTo').value); });
+
+  var months = last6Months();
+  var gnByMonth={}, pbByMonth={};
+  months.forEach(function(m){ gnByMonth[m]=0; pbByMonth[m]=0; });
+  state.sales.forEach(function(s){
+    var m = new Date(s.sale_date).toISOString().slice(0,7);
+    if(gnByMonth.hasOwnProperty(m)){ if(s.product==='peanutbutter') pbByMonth[m]+=Number(s.qty)*Number(s.unit_price); else gnByMonth[m]+=Number(s.qty)*Number(s.unit_price); }
+  });
+  if(charts.month) charts.month.destroy();
+  charts.month = new Chart(document.getElementById('monthChart'),{type:'bar',data:{labels:months.map(function(m){return new Date(m+'-02').toLocaleDateString('en-KE',{month:'short',year:'2-digit'});}),datasets:[
+    {label:'Groundnuts',data:months.map(function(m){return gnByMonth[m];}),backgroundColor:'#8B4C2E',borderRadius:4},
+    {label:'Peanut butter',data:months.map(function(m){return pbByMonth[m];}),backgroundColor:'#B5791E',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:function(v){return 'KSh '+v;},font:{size:10}},grid:{color:'#E7D8B7'}}}}});
+}
+function monthAgo(){ var d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,10); }
+function last6Months(){ var arr=[]; for(var i=5;i>=0;i--){ var d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-i); arr.push(d.toISOString().slice(0,7)); } return arr; }
+function generateReport(from,to){
+  if(!from||!to||from>to){ showToast('Check your date range'); return; }
+  var salesR = state.sales.filter(function(s){ var d=new Date(s.sale_date).toISOString().slice(0,10); return d>=from && d<=to; });
+  var expR = state.expenses.filter(function(e){ var d=new Date(e.expense_date).toISOString().slice(0,10); return d>=from && d<=to; });
+  var qtyGn=0,revGn=0,qtyPb=0,revPb=0;
+  salesR.forEach(function(s){ var tot=Number(s.qty)*Number(s.unit_price); if(s.product==='peanutbutter'){qtyPb+=Number(s.qty);revPb+=tot;} else {qtyGn+=Number(s.qty);revGn+=tot;} });
+  var expByBiz={groundnuts:0,peanutbutter:0,shared:0}, expByCat={};
+  expR.forEach(function(e){ expByBiz[e.business]+=Number(e.amount); var key=businessLabel(e.business)+' &middot; '+e.category; expByCat[key]=(expByCat[key]||0)+Number(e.amount); });
+  var totalRev=revGn+revPb, totalExp=expByBiz.groundnuts+expByBiz.peanutbutter+expByBiz.shared;
+  var outstanding = state.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+Number(d.amount);},0);
+  var html='<div class="report-box"><h3 style="font-size:14px;margin-bottom:6px;">Sales, '+fmtDate(from)+' &ndash; '+fmtDate(to)+'</h3><table><tr><td>Groundnuts &mdash; '+qtyGn+' pieces</td><td>'+money(revGn)+'</td></tr><tr><td>Peanut butter &mdash; '+qtyPb+' jars</td><td>'+money(revPb)+'</td></tr><tr><td><strong>Total revenue</strong></td><td><strong>'+money(totalRev)+'</strong></td></tr></table></div>';
+  html+='<div class="report-box"><h3 style="font-size:14px;margin-bottom:6px;">Expenses by category</h3><table>';
+  var keys=Object.keys(expByCat);
+  if(keys.length===0){ html+='<tr><td colspan="2">No expenses in this period.</td></tr>'; }
+  else{ keys.forEach(function(k){ html+='<tr><td>'+k+'</td><td>'+money(expByCat[k])+'</td></tr>'; }); }
+  html+='<tr><td><strong>Total expenses</strong></td><td><strong>'+money(totalExp)+'</strong></td></tr></table></div>';
+  html+='<div class="report-box"><table><tr><td><strong>Profit (period)</strong></td><td><strong>'+money(totalRev-totalExp)+'</strong></td></tr><tr><td>Outstanding debt (all-time)</td><td>'+money(outstanding)+'</td></tr></table></div>';
+  html+='<button class="btn btn-ghost" style="width:100%;margin-top:12px;" onclick="window.print()">Print this report</button>';
+  document.getElementById('reportOutput').innerHTML = html;
+}
+
+/* ---------- NAV ---------- */
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('nav button[data-tab]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab')===tab); });
+  moveIndicator();
+  if(tab==='dashboard') renderDashboard();
+  else if(tab==='sales') renderSales();
+  else if(tab==='debts') renderDebts();
+  else if(tab==='expenses') renderExpenses();
+  else if(tab==='reports') renderReports();
+}
+function moveIndicator(){
+  var activeBtn=document.querySelector('nav.tabs-desktop button.active');
+  var indicator=document.getElementById('indicator');
+  if(activeBtn && indicator){ indicator.style.width=activeBtn.offsetWidth+'px'; indicator.style.transform='translateX('+activeBtn.offsetLeft+'px)'; }
+}
+document.querySelectorAll('nav button[data-tab]').forEach(function(btn){ btn.addEventListener('click', function(){ switchTab(btn.getAttribute('data-tab')); }); });
+window.addEventListener('resize', moveIndicator);
+
+document.getElementById('settingsBtn').addEventListener('click', function(){
+  document.getElementById('priceGroundnut').value = state.settings.price_groundnut;
+  document.getElementById('pricePB').value = state.settings.price_pb;
+  document.getElementById('settingsModal').classList.add('open');
+});
+document.getElementById('closeSettings').addEventListener('click', function(){ document.getElementById('settingsModal').classList.remove('open'); });
+document.getElementById('saveSettings').addEventListener('click', async function(){
+  var pg=parseFloat(document.getElementById('priceGroundnut').value), pp=parseFloat(document.getElementById('pricePB').value);
+  try{
+    await api('/settings',{method:'PUT', body: JSON.stringify({ price_groundnut: pg>0?pg:state.settings.price_groundnut, price_pb: pp>0?pp:state.settings.price_pb })});
+    await loadAll();
+    document.getElementById('settingsModal').classList.remove('open');
+    showToast('Prices updated');
+    switchTab(activeTab);
+  }catch(e){ showToast(e.message); }
+});
+document.getElementById('syncBtn').addEventListener('click', async function(){
+  setSyncStrip('Syncing\u2026');
+  try{ await loadAll(); switchTab(activeTab); showToast('Synced'); }catch(e){ setSyncStrip('Could not reach the server', true); }
+});
+
+/* ---------- CHATBOT ---------- */
+document.getElementById('chatFab').addEventListener('click', function(){ document.getElementById('chatPanel').classList.add('open'); });
+document.getElementById('closeChat').addEventListener('click', function(){ document.getElementById('chatPanel').classList.remove('open'); });
+function addChatMsg(text, who){
+  var body=document.getElementById('chatBody');
+  var div=document.createElement('div');
+  div.className='chat-msg '+who;
+  div.textContent=text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+async function askChatbot(q){
+  addChatMsg(q, 'user');
+  try{
+    var data = await api('/chatbot',{method:'POST', body: JSON.stringify({question:q})});
+    addChatMsg(data.answer, 'bot');
+  }catch(e){ addChatMsg('Sorry, I could not look that up right now.', 'bot'); }
+}
+document.getElementById('chatSendBtn').addEventListener('click', function(){
+  var input=document.getElementById('chatInput');
+  var q=input.value.trim();
+  if(!q) return;
+  input.value='';
+  askChatbot(q);
+});
+document.getElementById('chatInput').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('chatSendBtn').click(); });
+document.querySelectorAll('.chat-suggestions button').forEach(function(btn){
+  btn.addEventListener('click', function(){ askChatbot(btn.getAttribute('data-q')); });
+});
+
+/* ---------- BOOT ---------- */
+async function bootApp(){
+  showApp();
+  document.getElementById('userGreeting').textContent = 'Hi ' + (state.user ? state.user.name : '') + ' \u00b7 KSh ledger';
+  try{
+    await loadAll();
+    switchTab('dashboard');
+    setTimeout(moveIndicator, 50);
+  }catch(e){
+    setSyncStrip('Could not reach the server', true);
+  }
+}
+
+(async function init(){
+  var token = getToken();
+  if(!token){ showAuthScreen(); return; }
+  try{
+    var me = await api('/me');
+    state.user = me.user;
+    await bootApp();
+  }catch(e){
+    showAuthScreen();
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
