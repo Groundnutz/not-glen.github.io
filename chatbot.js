@@ -60,6 +60,96 @@ function filterByDate(rows, dateField, range) {
     return d >= start && d < end;
   });
 }
+/**
+ * Creates an overall business summary and recommendations.
+ * This function only uses real data from the database.
+ *
+ * @param {Object} stats
+ * @returns {string}
+ */
+function getBusinessSummary(stats) {
+
+    const {
+        revenue,
+        expenses,
+        profit,
+        outstandingDebt,
+        groundnutRevenue,
+        peanutRevenue,
+        groundnutQty,
+        peanutQty
+    } = stats;
+
+    const advice = [];
+
+    // Revenue comparison
+    if (groundnutRevenue > peanutRevenue) {
+        advice.push(
+            "• Groundnuts are currently your strongest source of income. Consider prioritizing stock and marketing for them."
+        );
+    } else if (peanutRevenue > groundnutRevenue) {
+        advice.push(
+            "• Peanut butter is generating more revenue than groundnuts. Consider increasing production."
+        );
+    } else {
+        advice.push(
+            "• Groundnuts and peanut butter are contributing equally to your revenue."
+        );
+    }
+
+    // Profit health
+    if (profit < 0) {
+        advice.push(
+            "• Your business is operating at a loss during this period. Review your expenses carefully."
+        );
+    } else if (profit < revenue * 0.2) {
+        advice.push(
+            "• Profit is relatively low compared to revenue. Look for opportunities to reduce expenses."
+        );
+    } else {
+        advice.push(
+            "• Your profit margin looks healthy."
+        );
+    }
+
+    // Debt
+    if (outstandingDebt > 0) {
+        advice.push(
+            `• You still have ${money(outstandingDebt)} in unpaid debts. Following up with customers could improve cash flow.`
+        );
+    } else {
+        advice.push(
+            "• Excellent! There are currently no outstanding debts."
+        );
+    }
+
+    // Product quantities
+    if (groundnutQty > peanutQty) {
+        advice.push(
+            "• Groundnuts are selling in higher quantities than peanut butter."
+        );
+    }
+
+    return `
+📊 BUSINESS SUMMARY
+
+Revenue: ${money(revenue)}
+Expenses: ${money(expenses)}
+Estimated Profit: ${money(profit)}
+Outstanding Debt: ${money(outstandingDebt)}
+
+Groundnut Revenue: ${money(groundnutRevenue)}
+Peanut Butter Revenue: ${money(peanutRevenue)}
+
+Groundnuts Sold: ${groundnutQty}
+Peanut Butter Sold: ${peanutQty}
+
+Recommendations
+
+${advice.join("\n")}
+`.trim();
+
+}
 
 function answerQuestion(question, data) {
   const q = (question || '').toLowerCase();
@@ -79,8 +169,24 @@ function answerQuestion(question, data) {
 
   const unpaidDebts = data.debts.filter((d) => !d.paid);
   const outstanding = unpaidDebts.reduce((a, d) => a + Number(d.amount), 0);
+  const businessStats = {
+    revenue: totalRev,
+    expenses: totalExp,
+    profit,
+    outstandingDebt: outstanding,
+    groundnutRevenue: revGn,
+    peanutRevenue: revPb,
+    groundnutQty: qtyGn,
+    peanutQty: qtyPb
+};
 
   // Who owes money
+  // Business summary
+if (
+    /business|summary|overview|performance|status|health|how am i doing|how is my business/.test(q)
+) {
+    return getBusinessSummary(businessStats);
+}
   if (/who (owes|owe)|outstanding debt|debtors|unpaid/.test(q)) {
     if (unpaidDebts.length === 0) return 'Nobody currently owes you money — all debts are paid off.';
     const top = unpaidDebts.slice().sort((a, b) => b.amount - a.amount).slice(0, 8);
