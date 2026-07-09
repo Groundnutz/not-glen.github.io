@@ -306,6 +306,16 @@ document.getElementById('logoutBtn').addEventListener('click', function(){
 });
 
 /* ---------- DATA LOADING ---------- */
+/* ---------- DATA LOADING ---------- */
+var lastSnapshot = null;
+function isTypingInForm(){
+  var el = document.activeElement;
+  if(!el) return false;
+  var tag = el.tagName;
+  if(tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') return false;
+  var appEl = document.getElementById('app');
+  return !!(appEl && appEl.contains(el));
+}
 async function loadAll(){
   var [settings, sales, debts, expenses] = await Promise.all([
     api('/settings'), api('/sales'), api('/debts'), api('/expenses')
@@ -316,11 +326,21 @@ async function loadAll(){
   state.expenses = expenses;
   lastSyncTs = Date.now();
   setSyncStrip('Synced ' + relTime(lastSyncTs));
+  var snap = JSON.stringify({s:state.settings, sa:state.sales, d:state.debts, e:state.expenses});
+  var changed = snap !== lastSnapshot;
+  lastSnapshot = snap;
+  return changed;
 }
 
+// Poll for changes made on another device, but never interrupt active typing,
+// and never re-render unless the data actually changed.
 setInterval(async function(){
   if(!getToken()) return;
-  try{ await loadAll(); switchTab(activeTab); }
+  if(isTypingInForm()) return;
+  try{
+    var changed = await loadAll();
+    if(changed) switchTab(activeTab);
+  }
   catch(e){ setSyncStrip('Could not reach the server', true); }
 }, 15000);
 
