@@ -183,7 +183,7 @@ function answerQuestion(question, data) {
   // Who owes money
   // Business summary
 if (
-    /business|summary|overview|performance|status|health|how am i doing|how is my business/.test(q)
+    /business|summary|overview|performance|status|health|analysis|analyze|recommend|recommendation|improve|advice|how am i doing|how is my business|how are things going|how is the business/.test(q)
 ) {
     return getBusinessSummary(businessStats);
 }
