@@ -281,6 +281,95 @@ ${currentProfit>previousProfit
 `.trim();
 
 }
+/**
+ * Gives intelligent business advice using real ledger data.
+ * No AI required—just analysis.
+ */
+function getBusinessInsights(stats) {
+
+    const insights = [];
+
+    // Revenue contribution
+    const totalRevenue = stats.groundnutRevenue + stats.peanutRevenue;
+
+    const groundnutPercent =
+        totalRevenue === 0
+            ? 0
+            : ((stats.groundnutRevenue / totalRevenue) * 100).toFixed(1);
+
+    const peanutPercent =
+        totalRevenue === 0
+            ? 0
+            : ((stats.peanutRevenue / totalRevenue) * 100).toFixed(1);
+
+    insights.push(
+        `Groundnuts generate ${groundnutPercent}% of your total revenue.`
+    );
+
+    insights.push(
+        `Peanut butter generates ${peanutPercent}% of your total revenue.`
+    );
+
+    // Profitability
+    if (stats.profit < 0) {
+        insights.push(
+            "⚠ Your expenses are currently higher than your revenue."
+        );
+    } else {
+        insights.push(
+            "✅ Your business is currently profitable."
+        );
+    }
+
+    // Debt
+    if (stats.outstandingDebt > 0) {
+        insights.push(
+            `You have ${money(stats.outstandingDebt)} waiting to be collected from customers.`
+        );
+    } else {
+        insights.push(
+            "You currently have no outstanding debts."
+        );
+    }
+
+    // Recommendations
+    const recommendations = [];
+
+    if (groundnutPercent > peanutPercent) {
+        recommendations.push(
+            "Increase groundnut stock because it is your strongest product."
+        );
+    }
+
+    if (peanutPercent < 20) {
+        recommendations.push(
+            "Consider promoting peanut butter through offers or bundles."
+        );
+    }
+
+    if (stats.profit < 0) {
+        recommendations.push(
+            "Reduce unnecessary expenses before increasing inventory."
+        );
+    }
+
+    if (recommendations.length === 0) {
+        recommendations.push(
+            "Maintain your current strategy and continue monitoring performance."
+        );
+    }
+
+    return `
+📈 BUSINESS INSIGHTS
+
+${insights.join("\n")}
+
+Priority Actions
+
+${recommendations.map((r, i) => `${i + 1}. ${r}`).join("\n")}
+`.trim();
+
+}
 
 function answerQuestion(question, data) {
 
@@ -346,17 +435,23 @@ function answerQuestion(question, data) {
 
     };
 
-    // ==========================
-    // Monthly comparison
-    // ==========================
-    if (
-        /compare|comparison|improving|growth|decline|better than last month|compare this month|last month/.test(q)
-    ) {
+// ==========================
+// Monthly comparison
+// ==========================
+if (
+    /compare|comparison|improving|growth|decline|better than last month|compare this month|last month/.test(q)
+) {
+    return compareMonthlyPerformance(data);
+}
 
-        return compareMonthlyPerformance(data);
-
-    }
-
+// ==========================
+// Business Insights
+// ==========================
+if (
+    /focus|improve|insight|insights|what should i do|what next|business advice|help my business|strategy|priority/.test(q)
+) {
+    return getBusinessInsights(businessStats);
+}
     // ==========================
     // Business summary
     // ==========================
