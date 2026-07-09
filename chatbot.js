@@ -283,78 +283,177 @@ ${currentProfit>previousProfit
 }
 
 function answerQuestion(question, data) {
-  const q = (question || '').toLowerCase();
-  const range = detectRange(q);
-  const label = rangeLabel(range);
 
-  const sales = filterByDate(data.sales, 'sale_date', range);
-  const expenses = filterByDate(data.expenses, 'expense_date', range);
+    const q = (question || "").toLowerCase();
 
-  const revGn = sales.filter((s) => s.product === 'groundnuts').reduce((a, s) => a + s.qty * s.unit_price, 0);
-  const revPb = sales.filter((s) => s.product === 'peanutbutter').reduce((a, s) => a + s.qty * s.unit_price, 0);
-  const qtyGn = sales.filter((s) => s.product === 'groundnuts').reduce((a, s) => a + Number(s.qty), 0);
-  const qtyPb = sales.filter((s) => s.product === 'peanutbutter').reduce((a, s) => a + Number(s.qty), 0);
-  const totalRev = revGn + revPb;
-  const totalExp = expenses.reduce((a, e) => a + Number(e.amount), 0);
-  const profit = totalRev - totalExp;
+    const range = detectRange(q);
 
-  const unpaidDebts = data.debts.filter((d) => !d.paid);
-  const outstanding = unpaidDebts.reduce((a, d) => a + Number(d.amount), 0);
-  const businessStats = {
-    revenue: totalRev,
-    expenses: totalExp,
-    profit,
-    outstandingDebt: outstanding,
-    groundnutRevenue: revGn,
-    peanutRevenue: revPb,
-    groundnutQty: qtyGn,
-    peanutQty: qtyPb
+    const label = rangeLabel(range);
+
+    const sales = filterByDate(data.sales, "sale_date", range);
+
+    const expenses = filterByDate(data.expenses, "expense_date", range);
+
+    const revGn = sales
+        .filter(s => s.product === "groundnuts")
+        .reduce((a, s) => a + Number(s.qty) * Number(s.unit_price), 0);
+
+    const revPb = sales
+        .filter(s => s.product === "peanutbutter")
+        .reduce((a, s) => a + Number(s.qty) * Number(s.unit_price), 0);
+
+    const qtyGn = sales
+        .filter(s => s.product === "groundnuts")
+        .reduce((a, s) => a + Number(s.qty), 0);
+
+    const qtyPb = sales
+        .filter(s => s.product === "peanutbutter")
+        .reduce((a, s) => a + Number(s.qty), 0);
+
+    const totalRev = revGn + revPb;
+
+    const totalExp = expenses.reduce(
+        (a, e) => a + Number(e.amount),
+        0
+    );
+
+    const profit = totalRev - totalExp;
+
+    const unpaidDebts = data.debts.filter(d => !d.paid);
+
+    const outstanding = unpaidDebts.reduce(
+        (a, d) => a + Number(d.amount),
+        0
+    );
+
+    const businessStats = {
+
+        revenue: totalRev,
+
+        expenses: totalExp,
+
+        profit,
+
+        outstandingDebt: outstanding,
+
+        groundnutRevenue: revGn,
+
+        peanutRevenue: revPb,
+
+        groundnutQty: qtyGn,
+
+        peanutQty: qtyPb
+
+    };
+
+    // ==========================
+    // Monthly comparison
+    // ==========================
+    if (
+        /compare|comparison|improving|growth|decline|better than last month|compare this month|last month/.test(q)
+    ) {
+
+        return compareMonthlyPerformance(data);
+
+    }
+
+    // ==========================
+    // Business summary
+    // ==========================
+    if (
+        /business|summary|overview|performance|status|health|analysis|analyze|recommend|recommendation|advice|improve|how am i doing|how is my business|how are things going/.test(q)
+    ) {
+
+        return getBusinessSummary(businessStats);
+
+    }
+
+    // ==========================
+    // Debts
+    // ==========================
+    if (/who (owes|owe)|outstanding debt|debtors|unpaid/.test(q)) {
+
+        if (!unpaidDebts.length) {
+
+            return "Nobody currently owes you money — all debts are paid.";
+
+        }
+
+        const top = unpaidDebts
+            .slice()
+            .sort((a, b) => b.amount - a.amount)
+            .slice(0, 8);
+
+        const lines = top.map(d =>
+            `${d.name} owes ${money(d.amount)} (${d.product === "peanutbutter" ? "peanut butter" : "groundnuts"})`
+        );
+
+        return `Outstanding debt is ${money(outstanding)} across ${unpaidDebts.length} people. Biggest: ${lines.join("; ")}.`;
+
+    }
+
+    // Profit
+    if (/profit/.test(q)) {
+
+        return `Profit for ${label} is ${money(profit)} (Revenue ${money(totalRev)} minus Expenses ${money(totalExp)}).`;
+
+    }
+
+    // Expenses
+    if (/expense|spend|spent|cost/.test(q)) {
+
+        if (!expenses.length) {
+
+            return `No expenses were recorded for ${label}.`;
+
+        }
+
+        const byBiz = {
+
+            groundnuts: 0,
+
+            peanutbutter: 0,
+
+            shared: 0
+
+        };
+
+        expenses.forEach(e => {
+
+            byBiz[e.business] =
+                (byBiz[e.business] || 0) + Number(e.amount);
+
+        });
+
+        return `Expenses for ${label}: Groundnuts ${money(byBiz.groundnuts)}, Peanut Butter ${money(byBiz.peanutbutter)}, Shared ${money(byBiz.shared)}. Total ${money(totalExp)}.`;
+
+    }
+
+    // Peanut butter
+    if (/peanut butter|jars?/.test(q) && !/groundnut/.test(q)) {
+
+        return `You sold ${qtyPb} jar${qtyPb === 1 ? "" : "s"} of peanut butter during ${label}, earning ${money(revPb)}.`;
+
+    }
+
+    // Groundnuts
+    if (/groundnut/.test(q) && !/peanut butter/.test(q)) {
+
+        return `You sold ${qtyGn} piece${qtyGn === 1 ? "" : "s"} of groundnuts during ${label}, earning ${money(revGn)}.`;
+
+    }
+
+    // Revenue
+    if (/revenue|sales|sold|made|earn|income/.test(q)) {
+
+        return `Revenue for ${label}: Groundnuts ${money(revGn)} (${qtyGn} sold), Peanut Butter ${money(revPb)} (${qtyPb} sold). Total Revenue ${money(totalRev)}.`;
+
+    }
+
+    return `Here's your business snapshot for ${label}: Revenue ${money(totalRev)}, Expenses ${money(totalExp)}, Profit ${money(profit)}, Outstanding Debt ${money(outstanding)}. Try asking "Compare this month to last month" or "Business summary".`;
+
+}
+
+module.exports = {
+    answerQuestion
 };
-
-  // Who owes money
-  // Business summary
-if (
-    /business|summary|overview|performance|status|health|analysis|analyze|recommend|recommendation|improve|advice|how am i doing|how is my business|how are things going|how is the business/.test(q)
-) {
-    return getBusinessSummary(businessStats);
-}
-  if (/who (owes|owe)|outstanding debt|debtors|unpaid/.test(q)) {
-    if (unpaidDebts.length === 0) return 'Nobody currently owes you money — all debts are paid off.';
-    const top = unpaidDebts.slice().sort((a, b) => b.amount - a.amount).slice(0, 8);
-    const lines = top.map((d) => `${d.name} owes ${money(d.amount)} (${d.product === 'peanutbutter' ? 'peanut butter' : 'groundnuts'})`);
-    return `Outstanding debt is ${money(outstanding)} across ${unpaidDebts.length} ${unpaidDebts.length === 1 ? 'person' : 'people'}. Biggest: ${lines.join('; ')}.`;
-  }
-
-  // Profit
-  if (/profit/.test(q)) {
-    return `Profit for ${label} is ${money(profit)} (revenue ${money(totalRev)} minus expenses ${money(totalExp)}).`;
-  }
-
-  // Expenses
-  if (/expense|spend|spent|cost/.test(q)) {
-    if (expenses.length === 0) return `No expenses were logged for ${label}.`;
-    const byBiz = { groundnuts: 0, peanutbutter: 0, shared: 0 };
-    expenses.forEach((e) => { byBiz[e.business] = (byBiz[e.business] || 0) + Number(e.amount); });
-    return `Total expenses for ${label}: ${money(totalExp)} — groundnuts ${money(byBiz.groundnuts)}, peanut butter ${money(byBiz.peanutbutter)}, shared/overhead ${money(byBiz.shared)}.`;
-  }
-
-  // Peanut butter specific
-  if (/peanut butter|jars?/.test(q) && !/groundnut/.test(q)) {
-    return `You sold ${qtyPb} jar${qtyPb === 1 ? '' : 's'} of peanut butter for ${label}, earning ${money(revPb)}.`;
-  }
-
-  // Groundnuts specific
-  if (/groundnut/.test(q) && !/peanut butter/.test(q)) {
-    return `You sold ${qtyGn} piece${qtyGn === 1 ? '' : 's'} of groundnuts for ${label}, earning ${money(revGn)}.`;
-  }
-
-  // Revenue / sales / made / earn
-  if (/revenue|sales|sold|made|earn|income/.test(q)) {
-    return `For ${label}: groundnuts ${money(revGn)} (${qtyGn} pieces), peanut butter ${money(revPb)} (${qtyPb} jars). Total revenue ${money(totalRev)}.`;
-  }
-
-  // Fallback: general summary
-  return `Here's a snapshot for ${label}: revenue ${money(totalRev)}, expenses ${money(totalExp)}, profit ${money(profit)}, and outstanding debt (all time) is ${money(outstanding)}. Try asking things like "how much profit this month" or "who owes me money".`;
-}
-
-module.exports = { answerQuestion };
