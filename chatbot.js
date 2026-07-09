@@ -4,149 +4,280 @@
 // ever invented.
 
 function money(n) {
-  return 'KSh ' + Math.round(n || 0).toLocaleString('en-KE');
+    return "KSh " + Math.round(n || 0).toLocaleString("en-KE");
 }
 
 function startOfRange(range) {
-  const now = new Date();
-  const d = new Date(now);
-  if (range === 'today') {
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  if (range === 'week') {
-    d.setDate(d.getDate() - 7);
-    return d;
-  }
-  if (range === 'month') {
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  if (range === 'lastmonth') {
-    d.setMonth(d.getMonth() - 1, 1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  return new Date(0); // all time
-}
 
-function endOfRange(range) {
-  if (range === 'lastmonth') {
     const now = new Date();
-    const d = new Date(now.getFullYear(), now.getMonth(), 1);
-    return d;
-  }
-  return new Date(8640000000000000); // far future
+    const d = new Date(now);
+
+    if (range === "today") {
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    if (range === "week") {
+        d.setDate(d.getDate()-7);
+        return d;
+    }
+
+    if (range === "month") {
+        d.setDate(1);
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    if (range === "lastmonth") {
+        d.setMonth(d.getMonth()-1,1);
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    return new Date(0);
+
 }
 
-function detectRange(q) {
-  if (/\btoday\b/.test(q)) return 'today';
-  if (/\blast week\b/.test(q)) return 'week';
-  if (/\bthis week\b|\bweek\b/.test(q)) return 'week';
-  if (/\blast month\b/.test(q)) return 'lastmonth';
-  if (/\bthis month\b|\bmonth\b/.test(q)) return 'month';
-  return 'all';
-}
-function rangeLabel(range) {
-  return { today: 'today', week: 'the last 7 days', month: 'this month', lastmonth: 'last month', all: 'all time' }[range];
+function endOfRange(range){
+
+    if(range==="lastmonth"){
+
+        const now=new Date();
+
+        return new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            1
+        );
+
+    }
+
+    return new Date(8640000000000000);
+
 }
 
-function filterByDate(rows, dateField, range) {
-  const start = startOfRange(range);
-  const end = endOfRange(range);
-  return rows.filter((r) => {
-    const d = new Date(r[dateField]);
-    return d >= start && d < end;
-  });
+function detectRange(q){
+
+    if(/\btoday\b/.test(q)) return "today";
+
+    if(/\blast week\b/.test(q)) return "week";
+
+    if(/\bthis week\b|\bweek\b/.test(q)) return "week";
+
+    if(/\blast month\b/.test(q)) return "lastmonth";
+
+    if(/\bthis month\b|\bmonth\b/.test(q)) return "month";
+
+    return "all";
+
 }
+
+function rangeLabel(range){
+
+    return {
+
+        today:"today",
+
+        week:"the last 7 days",
+
+        month:"this month",
+
+        lastmonth:"last month",
+
+        all:"all time"
+
+    }[range];
+
+}
+
+function filterByDate(rows,dateField,range){
+
+    const start=startOfRange(range);
+
+    const end=endOfRange(range);
+
+    return rows.filter(r=>{
+
+        const d=new Date(r[dateField]);
+
+        return d>=start && d<end;
+
+    });
+
+}
+
 /**
- * Creates an overall business summary and recommendations.
- * This function only uses real data from the database.
- *
- * @param {Object} stats
- * @returns {string}
+ * Business Summary
  */
-function getBusinessSummary(stats) {
+function getBusinessSummary(stats){
 
-    const {
-        revenue,
-        expenses,
-        profit,
-        outstandingDebt,
-        groundnutRevenue,
-        peanutRevenue,
-        groundnutQty,
-        peanutQty
-    } = stats;
+    const advice=[];
 
-    const advice = [];
+    if(stats.groundnutRevenue>stats.peanutRevenue){
 
-    // Revenue comparison
-    if (groundnutRevenue > peanutRevenue) {
         advice.push(
-            "• Groundnuts are currently your strongest source of income. Consider prioritizing stock and marketing for them."
+            "• Groundnuts are currently your strongest source of income."
         );
-    } else if (peanutRevenue > groundnutRevenue) {
+
+    }else if(stats.peanutRevenue>stats.groundnutRevenue){
+
         advice.push(
-            "• Peanut butter is generating more revenue than groundnuts. Consider increasing production."
+            "• Peanut butter currently generates more revenue."
         );
-    } else {
-        advice.push(
-            "• Groundnuts and peanut butter are contributing equally to your revenue."
-        );
+
     }
 
-    // Profit health
-    if (profit < 0) {
+    if(stats.profit<0){
+
         advice.push(
-            "• Your business is operating at a loss during this period. Review your expenses carefully."
+            "• The business is operating at a loss. Review your expenses."
         );
-    } else if (profit < revenue * 0.2) {
+
+    }else if(stats.profit<stats.revenue*0.2){
+
         advice.push(
-            "• Profit is relatively low compared to revenue. Look for opportunities to reduce expenses."
+            "• Profit is relatively low compared to revenue."
         );
-    } else {
+
+    }else{
+
         advice.push(
-            "• Your profit margin looks healthy."
+            "• Your current profit margin looks healthy."
         );
+
     }
 
-    // Debt
-    if (outstandingDebt > 0) {
-        advice.push(
-            `• You still have ${money(outstandingDebt)} in unpaid debts. Following up with customers could improve cash flow.`
-        );
-    } else {
-        advice.push(
-            "• Excellent! There are currently no outstanding debts."
-        );
-    }
+    if(stats.outstandingDebt>0){
 
-    // Product quantities
-    if (groundnutQty > peanutQty) {
         advice.push(
-            "• Groundnuts are selling in higher quantities than peanut butter."
+            `• Outstanding debts total ${money(stats.outstandingDebt)}. Following up with customers would improve cash flow.`
         );
+
+    }else{
+
+        advice.push(
+            "• There are currently no outstanding debts."
+        );
+
     }
 
     return `
 📊 BUSINESS SUMMARY
 
-Revenue: ${money(revenue)}
-Expenses: ${money(expenses)}
-Estimated Profit: ${money(profit)}
-Outstanding Debt: ${money(outstandingDebt)}
+Revenue: ${money(stats.revenue)}
 
-Groundnut Revenue: ${money(groundnutRevenue)}
-Peanut Butter Revenue: ${money(peanutRevenue)}
+Expenses: ${money(stats.expenses)}
 
-Groundnuts Sold: ${groundnutQty}
-Peanut Butter Sold: ${peanutQty}
+Estimated Profit: ${money(stats.profit)}
+
+Outstanding Debt: ${money(stats.outstandingDebt)}
+
+Groundnut Revenue: ${money(stats.groundnutRevenue)}
+
+Peanut Butter Revenue: ${money(stats.peanutRevenue)}
+
+Groundnuts Sold: ${stats.groundnutQty}
+
+Peanut Butter Sold: ${stats.peanutQty}
 
 Recommendations
 
 ${advice.join("\n")}
+`.trim();
+
+}
+
+/**
+ * Compare this month with last month
+ */
+function compareMonthlyPerformance(data){
+
+    const currentSales=filterByDate(data.sales,"sale_date","month");
+
+    const previousSales=filterByDate(data.sales,"sale_date","lastmonth");
+
+    const currentExpenses=filterByDate(data.expenses,"expense_date","month");
+
+    const previousExpenses=filterByDate(data.expenses,"expense_date","lastmonth");
+
+    const revenue=rows=>rows.reduce(
+        (a,s)=>a+(Number(s.qty)*Number(s.unit_price)),
+        0
+    );
+
+    const expense=rows=>rows.reduce(
+        (a,e)=>a+Number(e.amount),
+        0
+    );
+
+    const currentRevenue=revenue(currentSales);
+
+    const previousRevenue=revenue(previousSales);
+
+    const currentExpense=expense(currentExpenses);
+
+    const previousExpense=expense(previousExpenses);
+
+    const currentProfit=currentRevenue-currentExpense;
+
+    const previousProfit=previousRevenue-previousExpense;
+
+    function compare(now,before){
+
+        const diff=now-before;
+
+        if(before===0){
+
+            return{
+
+                diff,
+
+                percent:null
+
+            };
+
+        }
+
+        return{
+
+            diff,
+
+            percent:((diff/before)*100).toFixed(1)
+
+        };
+
+    }
+
+    const revenueDiff=compare(currentRevenue,previousRevenue);
+
+    const expenseDiff=compare(currentExpense,previousExpense);
+
+    const profitDiff=compare(currentProfit,previousProfit);
+
+    function line(name,item){
+
+        if(item.percent===null){
+
+            return `${name}: ${money(item.diff)} (no previous data)`;
+
+        }
+
+        return `${name}: ${item.diff>=0?"↑":"↓"} ${item.percent}% (${money(item.diff)})`;
+
+    }
+
+    return `
+📈 MONTHLY COMPARISON
+
+${line("Revenue",revenueDiff)}
+
+${line("Expenses",expenseDiff)}
+
+${line("Profit",profitDiff)}
+
+${currentProfit>previousProfit
+?"✅ Your business is improving compared to last month."
+:"⚠️ Profit has declined compared to last month."}
 `.trim();
 
 }
