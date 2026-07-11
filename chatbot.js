@@ -155,6 +155,13 @@ function groupDebtorsByCustomer(debts) {
         .sort((a,b)=>b.totalDebt-a.totalDebt);
 
 }
+function findCustomer(name, customerDebts) {
+
+    return customerDebts.find(c =>
+        c.name.toLowerCase() === name.toLowerCase()
+    );
+
+}
 
 /**
  * Business Summary
@@ -485,6 +492,38 @@ function answerQuestion(question, data) {
         peanutQty: qtyPb
 
     };
+    // ==========================
+// Customer lookup
+// ==========================
+const customer = customerDebts.find(c =>
+    q.includes(c.name.toLowerCase())
+);
+
+if (
+    customer &&
+    /owe|debt|customer|tell me about|summary|who is/.test(q)
+) {
+
+    const items = [];
+
+    if (customer.peanutButter)
+        items.push(`${customer.peanutButter} Peanut Butter`);
+
+    if (customer.groundnuts)
+        items.push(`${customer.groundnuts} Groundnuts`);
+
+    return `
+👤 CUSTOMER SUMMARY
+
+Name: ${customer.name}
+
+Outstanding Debt: ${money(customer.totalDebt)}
+
+Products:
+${items.join("\n")}
+`.trim();
+
+}
 
 // ==========================
 // Monthly comparison
