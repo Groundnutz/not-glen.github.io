@@ -66,6 +66,12 @@ CREATE TABLE IF NOT EXISTS expenses (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_question TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_answer_hash TEXT;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS quantity NUMERIC;
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS unit TEXT;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS pieces_per_kg NUMERIC NOT NULL DEFAULT 40;
 `;
 
 async function initSchema() {

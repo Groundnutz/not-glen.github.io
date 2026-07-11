@@ -11,21 +11,27 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+function normAnswer(s) {
+  return (s || '').trim().toLowerCase();
+}
+
 /* ---------- AUTH ---------- */
 
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body || {};
+    const { email, password, name, recovery_question, recovery_answer } = req.body || {};
     if (!email || !password || !name) return res.status(400).json({ error: 'Name, email, and password are all required' });
     if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (!recovery_question || !recovery_answer) return res.status(400).json({ error: 'Please set a security question and answer, in case you forget your password' });
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
     if (existing.rows.length) return res.status(409).json({ error: 'An account with that email already exists' });
 
     const hash = await bcrypt.hash(password, 10);
+    const answerHash = await bcrypt.hash(normAnswer(recovery_answer), 10);
     const result = await pool.query(
-      'INSERT INTO users (email, name, password_hash) VALUES ($1, $2, $3) RETURNING id, email, name',
-      [email.toLowerCase().trim(), name.trim(), hash]
+      'INSERT INTO users (email, name, password_hash, recovery_question, recovery_answer_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name',
+      [email.toLowerCase().trim(), name.trim(), hash, recovery_question.trim(), answerHash]
     );
     const user = result.rows[0];
     res.json({ token: signToken(user), user });
@@ -58,16 +64,53 @@ app.get('/api/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
+app.get('/api/users', requireAuth, async (req, res) => {
+  const result = await pool.query('SELECT id, name FROM users ORDER BY id');
+  res.json(result.rows);
+});
+
+/* ---------- FORGOT PASSWORD ---------- */
+
+app.post('/api/forgot-password/question', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'Enter your email' });
+  const result = await pool.query('SELECT recovery_question FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+  if (!result.rows.length || !result.rows[0].recovery_question) {
+    return res.status(404).json({ error: 'No account found with that email, or no security question was set for it' });
+  }
+  res.json({ question: result.rows[0].recovery_question });
+});
+
+app.post('/api/forgot-password/reset', async (req, res) => {
+  const { email, answer, new_password } = req.body || {};
+  if (!email || !answer || !new_password) return res.status(400).json({ error: 'Missing fields' });
+  if (new_password.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+
+  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+  const user = result.rows[0];
+  if (!user || !user.recovery_answer_hash) return res.status(404).json({ error: 'No account found with that email' });
+
+  const ok = await bcrypt.compare(normAnswer(answer), user.recovery_answer_hash);
+  if (!ok) return res.status(401).json({ error: "That answer didn't match what we have on file" });
+
+  const hash = await bcrypt.hash(new_password, 10);
+  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user.id]);
+  res.json({ ok: true });
+});
+
 /* ---------- SETTINGS ---------- */
 
 app.get('/api/settings', requireAuth, async (req, res) => {
-  const result = await pool.query('SELECT price_groundnut, price_pb FROM settings WHERE id = 1');
+  const result = await pool.query('SELECT price_groundnut, price_pb, pieces_per_kg FROM settings WHERE id = 1');
   res.json(result.rows[0]);
 });
 
 app.put('/api/settings', requireAuth, async (req, res) => {
-  const { price_groundnut, price_pb } = req.body || {};
-  await pool.query('UPDATE settings SET price_groundnut = $1, price_pb = $2 WHERE id = 1', [price_groundnut, price_pb]);
+  const { price_groundnut, price_pb, pieces_per_kg } = req.body || {};
+  await pool.query(
+    'UPDATE settings SET price_groundnut = $1, price_pb = $2, pieces_per_kg = $3 WHERE id = 1',
+    [price_groundnut, price_pb, pieces_per_kg]
+  );
   res.json({ ok: true });
 });
 
@@ -84,6 +127,16 @@ app.post('/api/sales', requireAuth, async (req, res) => {
   const result = await pool.query(
     'INSERT INTO sales (sale_date, product, qty, unit_price, created_by) VALUES ($1,$2,$3,$4,$5) RETURNING *',
     [sale_date, product, qty, unit_price, req.user.id]
+  );
+  res.json(result.rows[0]);
+});
+
+app.patch('/api/sales/:id', requireAuth, async (req, res) => {
+  const { sale_date, product, qty, unit_price } = req.body || {};
+  if (!sale_date || !product || !qty || !unit_price) return res.status(400).json({ error: 'Missing fields' });
+  const result = await pool.query(
+    'UPDATE sales SET sale_date=$1, product=$2, qty=$3, unit_price=$4 WHERE id=$5 RETURNING *',
+    [sale_date, product, qty, unit_price, req.params.id]
   );
   res.json(result.rows[0]);
 });
@@ -110,6 +163,16 @@ app.post('/api/debts', requireAuth, async (req, res) => {
   res.json(result.rows[0]);
 });
 
+app.patch('/api/debts/:id', requireAuth, async (req, res) => {
+  const { name, product, qty, amount, debt_date } = req.body || {};
+  if (!name || !product || !amount || !debt_date) return res.status(400).json({ error: 'Missing fields' });
+  const result = await pool.query(
+    'UPDATE debts SET name=$1, product=$2, qty=$3, amount=$4, debt_date=$5 WHERE id=$6 RETURNING *',
+    [name, product, qty || 0, amount, debt_date, req.params.id]
+  );
+  res.json(result.rows[0]);
+});
+
 app.patch('/api/debts/:id/pay', requireAuth, async (req, res) => {
   const result = await pool.query(
     "UPDATE debts SET paid = true, paid_date = CURRENT_DATE WHERE id = $1 RETURNING *",
@@ -131,11 +194,21 @@ app.get('/api/expenses', requireAuth, async (req, res) => {
 });
 
 app.post('/api/expenses', requireAuth, async (req, res) => {
-  const { business, category, description, amount, expense_date } = req.body || {};
-  if (!business || !category || !amount || !expense_date) return res.status(400).json({ error: 'Missing fields' });
+  const { business, category, description, amount, expense_date, quantity, unit } = req.body || {};
+  if (!business || !category || amount === undefined || amount === null || !expense_date) return res.status(400).json({ error: 'Missing fields' });
   const result = await pool.query(
-    'INSERT INTO expenses (business, category, description, amount, expense_date, created_by) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-    [business, category, description || '', amount, expense_date, req.user.id]
+    'INSERT INTO expenses (business, category, description, amount, expense_date, quantity, unit, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+    [business, category, description || '', amount, expense_date, quantity || null, unit || null, req.user.id]
+  );
+  res.json(result.rows[0]);
+});
+
+app.patch('/api/expenses/:id', requireAuth, async (req, res) => {
+  const { business, category, description, amount, expense_date, quantity, unit } = req.body || {};
+  if (!business || !category || amount === undefined || amount === null || !expense_date) return res.status(400).json({ error: 'Missing fields' });
+  const result = await pool.query(
+    'UPDATE expenses SET business=$1, category=$2, description=$3, amount=$4, expense_date=$5, quantity=$6, unit=$7 WHERE id=$8 RETURNING *',
+    [business, category, description || '', amount, expense_date, quantity || null, unit || null, req.params.id]
   );
   res.json(result.rows[0]);
 });

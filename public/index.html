@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Groundnut & Peanut Butter Ledger</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2E2115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Groundnut Ledger">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -51,11 +56,13 @@
   .metric .value{font-size:20px;}
   .metric.profit .value{color:var(--money);}
   .metric.debt .value{color:var(--debt);}
+  .metric.low .value{color:var(--debt);}
   label{display:block;font-size:12.5px;font-weight:500;color:var(--ink-soft);margin:10px 0 4px;}
   label:first-child{margin-top:0;}
   input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:#fff;color:var(--ink);}
   input:focus,select:focus{outline:2px solid var(--groundnut);outline-offset:1px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;border:none;font-weight:600;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
   .btn-primary{background:var(--groundnut);color:#fff;width:100%;margin-top:12px;}
   .btn-primary:active{transform:scale(0.98);}
@@ -63,16 +70,19 @@
   .btn-sm{padding:6px 10px;font-size:12.5px;border-radius:6px;}
   .btn-paid{background:var(--money);color:#fff;}
   .btn-del{background:none;color:var(--debt);border:1px solid var(--debt-bg);}
+  .btn-edit{background:none;color:var(--groundnut);border:1px solid var(--groundnut-bg);}
+  .btn-link{background:none;border:none;color:var(--groundnut);font-size:12.5px;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;}
   .entry-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);}
   .entry-row:last-child{border-bottom:none;}
   .entry-main{flex:1;min-width:0;}
   .entry-title{font-size:14px;font-weight:600;}
   .entry-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
-  .entry-actions{display:flex;gap:6px;flex-shrink:0;}
+  .entry-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
   .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;margin-right:6px;}
   .pill-groundnut{background:var(--groundnut-bg);color:var(--groundnut);}
   .pill-pb{background:var(--pb-bg);color:#7A5314;}
   .pill-shared{background:var(--bg-alt);color:var(--ink-soft);}
+  .pill-user{background:var(--bg-alt);color:var(--ink-soft);}
   .stamp{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;border:2px dashed var(--money);color:var(--money);font-family:'Zilla Slab',serif;font-weight:700;font-size:11px;transform:rotate(-8deg);letter-spacing:0.5px;flex-shrink:0;}
   .empty{text-align:center;padding:24px 12px;color:var(--ink-soft);font-size:13.5px;}
   .section-total{display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:6px;border-top:1px solid var(--line);font-size:13.5px;font-weight:600;}
@@ -90,13 +100,18 @@
   .report-box table{width:100%;border-collapse:collapse;font-size:13px;}
   .report-box td{padding:5px 0;}
   .report-box td:last-child{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .edit-box{background:var(--bg-alt);border-radius:10px;padding:12px;margin:6px 0;}
+  .edit-actions{display:flex;gap:8px;margin-top:10px;}
+  .edit-actions .btn{flex:1;margin-top:0;}
+  .filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+  .filter-bar input, .filter-bar select{flex:1;min-width:110px;}
   @media (min-width:760px){body{padding-bottom:20px;} nav.tabs-mobile{display:none;} .metrics{grid-template-columns:repeat(4,1fr);}}
   @media (max-width:759px){nav.tabs-desktop{display:none;}}
   .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:all 0.25s;z-index:60;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   @media (min-width:760px){.toast{bottom:24px;}}
 
-  /* Login screen */
+  /* Login / auth */
   .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
   .auth-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 4px 16px rgba(46,33,21,0.12);}
   .auth-card .brand-mark{width:44px;height:44px;border-radius:50%;background:var(--pb);display:flex;align-items:center;justify-content:center;font-family:'Zilla Slab',serif;font-weight:700;color:var(--ink);font-size:19px;margin:0 auto 10px;}
@@ -106,6 +121,8 @@
   .auth-toggle button{flex:1;padding:8px;border:none;background:none;border-radius:6px;font-weight:600;font-size:13px;color:var(--ink-soft);cursor:pointer;font-family:'Inter',sans-serif;}
   .auth-toggle button.active{background:var(--paper);color:var(--ink);box-shadow:var(--shadow);}
   .auth-error{background:var(--debt-bg);color:var(--debt);font-size:12.5px;padding:8px 10px;border-radius:8px;margin-top:10px;}
+  .auth-note{background:var(--money-bg);color:var(--money);font-size:12.5px;padding:8px 10px;border-radius:8px;margin-top:10px;}
+  .auth-foot{text-align:center;margin-top:14px;}
 
   /* Chatbot */
   .chat-fab{position:fixed;bottom:84px;right:16px;width:52px;height:52px;border-radius:50%;background:var(--groundnut);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(46,33,21,0.25);z-index:30;}
@@ -136,18 +153,45 @@
       <button id="toggleLogin" class="active">Log in</button>
       <button id="toggleRegister">Create account</button>
     </div>
+
     <div id="loginForm">
       <label for="loginEmail">Email</label><input type="email" id="loginEmail" placeholder="you@example.com">
       <label for="loginPassword">Password</label><input type="password" id="loginPassword">
       <button class="btn btn-primary" id="loginBtn">Log in</button>
+      <div class="auth-foot"><button class="btn-link" id="showForgot">Forgot password?</button></div>
     </div>
+
     <div id="registerForm" style="display:none;">
       <label for="regName">Your name</label><input type="text" id="regName" placeholder="e.g. Glen">
       <label for="regEmail">Email</label><input type="email" id="regEmail">
       <label for="regPassword">Password</label><input type="password" id="regPassword" placeholder="At least 6 characters">
+      <label for="regQuestion">Security question (for password recovery)</label>
+      <select id="regQuestion">
+        <option>What's the name of your first pet?</option>
+        <option>What street did you grow up on?</option>
+        <option>What's your mother's maiden name?</option>
+        <option>What's the name of your primary school?</option>
+      </select>
+      <label for="regAnswer">Your answer</label><input type="text" id="regAnswer" placeholder="Only you should know this">
       <button class="btn btn-primary" id="registerBtn">Create account</button>
     </div>
+
+    <div id="forgotForm" style="display:none;">
+      <div id="forgotStep1">
+        <label for="forgotEmail">Your email</label><input type="email" id="forgotEmail">
+        <button class="btn btn-primary" id="forgotFindBtn">Continue</button>
+      </div>
+      <div id="forgotStep2" style="display:none;">
+        <p id="forgotQuestionText" style="font-size:13.5px;font-weight:600;margin-top:6px;"></p>
+        <label for="forgotAnswer">Your answer</label><input type="text" id="forgotAnswer">
+        <label for="forgotNewPassword">New password</label><input type="password" id="forgotNewPassword" placeholder="At least 6 characters">
+        <button class="btn btn-primary" id="forgotResetBtn">Reset password</button>
+      </div>
+      <div class="auth-foot"><button class="btn-link" id="backToLogin">Back to log in</button></div>
+    </div>
+
     <div id="authError" class="auth-error" style="display:none;"></div>
+    <div id="authNote" class="auth-note" style="display:none;"></div>
   </div>
 </div>
 
@@ -206,10 +250,12 @@
 
   <div class="modal-overlay" id="settingsModal">
     <div class="modal">
-      <div class="modal-head"><h2 style="font-size:17px;">Selling prices</h2><button class="modal-close" id="closeSettings">&times;</button></div>
+      <div class="modal-head"><h2 style="font-size:17px;">Settings</h2><button class="modal-close" id="closeSettings">&times;</button></div>
       <label>Groundnuts &mdash; price per piece (KSh)</label><input type="number" id="priceGroundnut" min="0" step="1">
       <label>Peanut butter &mdash; price per jar (KSh)</label><input type="number" id="pricePB" min="0" step="1">
-      <button class="btn btn-primary" id="saveSettings">Save prices</button>
+      <label>Pieces packaged per kg of raw groundnuts</label><input type="number" id="piecesPerKg" min="1" step="1">
+      <p style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;">Used to estimate remaining stock on the Dashboard. Adjust this to match how many pieces you actually get from 1kg.</p>
+      <button class="btn btn-primary" id="saveSettings">Save settings</button>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -219,10 +265,13 @@
 (function(){
 
 var TOKEN_KEY = 'groundnut_ledger_token';
-var state = { settings:{price_groundnut:100,price_pb:600}, sales:[], debts:[], expenses:[], user:null };
+var state = { settings:{price_groundnut:100,price_pb:600,pieces_per_kg:40}, sales:[], debts:[], expenses:[], user:null, users:[] };
 var activeTab = 'dashboard';
 var charts = {};
 var lastSyncTs = null;
+var lastSnapshot = null;
+var editingSaleId = null, editingDebtId = null, editingExpenseId = null;
+var saleFilter = '', debtFilter = '', expenseFilter = '';
 
 function uid(){ return Date.now().toString(36); }
 function money(n){ n = Math.round(n||0); return 'KSh ' + n.toLocaleString('en-KE'); }
@@ -232,6 +281,7 @@ function showToast(msg){ var t=document.getElementById('toast'); t.textContent=m
 function setSyncStrip(text,isErr){ var el=document.getElementById('syncStrip'); el.textContent=text; el.classList.toggle('err',!!isErr); }
 function relTime(ts){ if(!ts) return 'never'; var diff=Math.round((Date.now()-ts)/1000); if(diff<5) return 'just now'; if(diff<60) return diff+'s ago'; if(diff<3600) return Math.round(diff/60)+'m ago'; return Math.round(diff/3600)+'h ago'; }
 function escapeHtml(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function userName(id){ var u = state.users.find(function(x){return x.id===id;}); return u ? u.name : ''; }
 
 function getToken(){ return localStorage.getItem(TOKEN_KEY); }
 function setToken(t){ localStorage.setItem(TOKEN_KEY, t); }
@@ -258,25 +308,32 @@ function showApp(){
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('appRoot').style.display = 'block';
 }
-document.getElementById('toggleLogin').addEventListener('click', function(){
-  document.getElementById('toggleLogin').classList.add('active');
-  document.getElementById('toggleRegister').classList.remove('active');
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('registerForm').style.display = 'none';
-});
-document.getElementById('toggleRegister').addEventListener('click', function(){
-  document.getElementById('toggleRegister').classList.add('active');
-  document.getElementById('toggleLogin').classList.remove('active');
-  document.getElementById('registerForm').style.display = 'block';
-  document.getElementById('loginForm').style.display = 'none';
-});
-function showAuthError(msg){
-  var el = document.getElementById('authError');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-document.getElementById('loginBtn').addEventListener('click', async function(){
+function clearAuthMsgs(){
   document.getElementById('authError').style.display='none';
+  document.getElementById('authNote').style.display='none';
+}
+function showAuthErr(msg){ var el=document.getElementById('authError'); el.textContent=msg; el.style.display='block'; }
+function showAuthNote(msg){ var el=document.getElementById('authNote'); el.textContent=msg; el.style.display='block'; }
+
+function showPane(which){
+  document.getElementById('loginForm').style.display = which==='login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = which==='register' ? 'block' : 'none';
+  document.getElementById('forgotForm').style.display = which==='forgot' ? 'block' : 'none';
+  document.getElementById('toggleLogin').classList.toggle('active', which==='login');
+  document.getElementById('toggleRegister').classList.toggle('active', which==='register');
+  clearAuthMsgs();
+}
+document.getElementById('toggleLogin').addEventListener('click', function(){ showPane('login'); });
+document.getElementById('toggleRegister').addEventListener('click', function(){ showPane('register'); });
+document.getElementById('showForgot').addEventListener('click', function(){
+  showPane('forgot');
+  document.getElementById('forgotStep1').style.display='block';
+  document.getElementById('forgotStep2').style.display='none';
+});
+document.getElementById('backToLogin').addEventListener('click', function(){ showPane('login'); });
+
+document.getElementById('loginBtn').addEventListener('click', async function(){
+  clearAuthMsgs();
   try{
     var data = await api('/login', {method:'POST', body: JSON.stringify({
       email: document.getElementById('loginEmail').value.trim(),
@@ -285,20 +342,44 @@ document.getElementById('loginBtn').addEventListener('click', async function(){
     setToken(data.token);
     state.user = data.user;
     await bootApp();
-  }catch(e){ showAuthError(e.message); }
+  }catch(e){ showAuthErr(e.message); }
 });
 document.getElementById('registerBtn').addEventListener('click', async function(){
-  document.getElementById('authError').style.display='none';
+  clearAuthMsgs();
   try{
     var data = await api('/register', {method:'POST', body: JSON.stringify({
       name: document.getElementById('regName').value.trim(),
       email: document.getElementById('regEmail').value.trim(),
-      password: document.getElementById('regPassword').value
+      password: document.getElementById('regPassword').value,
+      recovery_question: document.getElementById('regQuestion').value,
+      recovery_answer: document.getElementById('regAnswer').value
     })});
     setToken(data.token);
     state.user = data.user;
     await bootApp();
-  }catch(e){ showAuthError(e.message); }
+  }catch(e){ showAuthErr(e.message); }
+});
+document.getElementById('forgotFindBtn').addEventListener('click', async function(){
+  clearAuthMsgs();
+  try{
+    var email = document.getElementById('forgotEmail').value.trim();
+    var data = await api('/forgot-password/question', {method:'POST', body: JSON.stringify({email:email})});
+    document.getElementById('forgotQuestionText').textContent = data.question;
+    document.getElementById('forgotStep1').style.display='none';
+    document.getElementById('forgotStep2').style.display='block';
+  }catch(e){ showAuthErr(e.message); }
+});
+document.getElementById('forgotResetBtn').addEventListener('click', async function(){
+  clearAuthMsgs();
+  try{
+    await api('/forgot-password/reset', {method:'POST', body: JSON.stringify({
+      email: document.getElementById('forgotEmail').value.trim(),
+      answer: document.getElementById('forgotAnswer').value,
+      new_password: document.getElementById('forgotNewPassword').value
+    })});
+    showPane('login');
+    showAuthNote('Password reset. You can log in with your new password now.');
+  }catch(e){ showAuthErr(e.message); }
 });
 document.getElementById('logoutBtn').addEventListener('click', function(){
   clearToken();
@@ -306,8 +387,6 @@ document.getElementById('logoutBtn').addEventListener('click', function(){
 });
 
 /* ---------- DATA LOADING ---------- */
-/* ---------- DATA LOADING ---------- */
-var lastSnapshot = null;
 function isTypingInForm(){
   var el = document.activeElement;
   if(!el) return false;
@@ -317,13 +396,14 @@ function isTypingInForm(){
   return !!(appEl && appEl.contains(el));
 }
 async function loadAll(){
-  var [settings, sales, debts, expenses] = await Promise.all([
-    api('/settings'), api('/sales'), api('/debts'), api('/expenses')
+  var [settings, sales, debts, expenses, users] = await Promise.all([
+    api('/settings'), api('/sales'), api('/debts'), api('/expenses'), api('/users')
   ]);
   state.settings = settings;
   state.sales = sales;
   state.debts = debts;
   state.expenses = expenses;
+  state.users = users;
   lastSyncTs = Date.now();
   setSyncStrip('Synced ' + relTime(lastSyncTs));
   var snap = JSON.stringify({s:state.settings, sa:state.sales, d:state.debts, e:state.expenses});
@@ -332,8 +412,6 @@ async function loadAll(){
   return changed;
 }
 
-// Poll for changes made on another device, but never interrupt active typing,
-// and never re-render unless the data actually changed.
 setInterval(async function(){
   if(!getToken()) return;
   if(isTypingInForm()) return;
@@ -350,10 +428,19 @@ function productUnit(p){ return p==='peanutbutter' ? 'jar' : 'piece'; }
 function pillClass(b){ if(b==='peanutbutter') return 'pill-pb'; if(b==='groundnuts') return 'pill-groundnut'; return 'pill-shared'; }
 function businessLabel(b){ if(b==='peanutbutter') return 'Peanut butter'; if(b==='groundnuts') return 'Groundnuts'; return 'Shared / overhead'; }
 var EXPENSE_CATEGORIES = { groundnuts:['Raw groundnuts (kg)','Containers & lids','Transport'], peanutbutter:['Raw groundnuts (kg)','Jars','Labour'], shared:['Electricity','Other'] };
+function categoryUnit(cat){
+  if(cat === 'Raw groundnuts (kg)') return 'kg';
+  if(cat === 'Containers & lids') return 'pieces';
+  if(cat === 'Jars') return 'jars';
+  return null;
+}
 
 function totals(){
   var revGn=0,revPb=0,qtyGn=0,qtyPb=0;
   state.sales.forEach(function(s){ var t=Number(s.qty)*Number(s.unit_price); if(s.product==='peanutbutter'){revPb+=t;qtyPb+=Number(s.qty);} else {revGn+=t;qtyGn+=Number(s.qty);} });
+  // Debts represent goods already sold on credit — count them as revenue too,
+  // attributed to when the sale happened (debt_date), not when it gets paid.
+  state.debts.forEach(function(d){ if(d.product==='peanutbutter'){revPb+=Number(d.amount);qtyPb+=Number(d.qty);} else {revGn+=Number(d.amount);qtyGn+=Number(d.qty);} });
   var expByBiz={groundnuts:0,peanutbutter:0,shared:0};
   state.expenses.forEach(function(e){ expByBiz[e.business]=(expByBiz[e.business]||0)+Number(e.amount); });
   var totalExp=expByBiz.groundnuts+expByBiz.peanutbutter+expByBiz.shared;
@@ -361,13 +448,38 @@ function totals(){
   var outstanding=state.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+Number(d.amount);},0);
   return {revGn:revGn,revPb:revPb,qtyGn:qtyGn,qtyPb:qtyPb,expByBiz:expByBiz,totalExp:totalExp,totalRev:totalRev,profit:totalRev-totalExp,outstanding:outstanding};
 }
+
+function stockLevels(){
+  var kgBought=0, containersBought=0, jarsBought=0;
+  state.expenses.forEach(function(e){
+    var q = Number(e.quantity)||0;
+    if(!q) return;
+    if(e.category === 'Raw groundnuts (kg)') kgBought += q;
+    else if(e.category === 'Containers & lids') containersBought += q;
+    else if(e.category === 'Jars') jarsBought += q;
+  });
+  var piecesPerKg = Number(state.settings.pieces_per_kg) || 40;
+  var t = totals();
+  var kgUsed = t.qtyGn / piecesPerKg;
+  var kgRemaining = kgBought - kgUsed;
+  var containersRemaining = containersBought - t.qtyGn;
+  var jarsRemaining = jarsBought - t.qtyPb;
+  return { kgRemaining:kgRemaining, containersRemaining:containersRemaining, jarsRemaining:jarsRemaining, hasAnyPurchases: (kgBought>0||containersBought>0||jarsBought>0) };
+}
+
 function last14Days(){ var days=[]; for(var i=13;i>=0;i--){ var d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); } return days; }
 function metricCard(label,value,cls){ return '<div class="metric '+cls+'"><div class="label">'+label+'</div><div class="value figures">'+value+'</div></div>'; }
 function wrapPanel(id,inner){ return '<div class="tabpanel active" id="panel-'+id+'">'+inner+'</div>'; }
+function addedByTag(createdBy){
+  var name = userName(createdBy);
+  if(!name) return '';
+  return ' &middot; <span class="pill pill-user">'+escapeHtml(name)+'</span>';
+}
 
 /* ---------- DASHBOARD ---------- */
 function renderDashboard(){
   var t = totals();
+  var stock = stockLevels();
   var days = last14Days();
   var gnByDay={}, pbByDay={};
   days.forEach(function(d){ gnByDay[d]=0; pbByDay[d]=0; });
@@ -375,8 +487,26 @@ function renderDashboard(){
     var d = new Date(s.sale_date).toISOString().slice(0,10);
     if(gnByDay.hasOwnProperty(d)){ if(s.product==='peanutbutter') pbByDay[d]+=Number(s.qty)*Number(s.unit_price); else gnByDay[d]+=Number(s.qty)*Number(s.unit_price); }
   });
+  state.debts.forEach(function(d){
+    var dd = new Date(d.debt_date).toISOString().slice(0,10);
+    if(gnByDay.hasOwnProperty(dd)){ if(d.product==='peanutbutter') pbByDay[dd]+=Number(d.amount); else gnByDay[dd]+=Number(d.amount); }
+  });
   var html='';
   html+='<div class="metrics">'+metricCard('Total revenue',money(t.totalRev),'')+metricCard('Total expenses',money(t.totalExp),'')+metricCard('Profit',money(t.profit),'profit')+metricCard('Outstanding debt',money(t.outstanding),'debt')+'</div>';
+  html+='<p style="font-size:11.5px;color:var(--ink-soft);margin:-8px 0 14px;">Revenue and profit include goods sold on credit (debts), counted in the month they were sold — not the month they get paid. Outstanding debt shows how much of that is still uncollected in cash.</p>';
+
+  html+='<div class="card"><h2>Stock on hand <span class="tag">estimated from purchases &amp; sales</span></h2>';
+  if(!stock.hasAnyPurchases){
+    html+='<p class="empty">No stock purchases logged yet. Add a quantity when logging groundnuts, containers, or jars in Expenses to start tracking this.</p>';
+  } else {
+    html+='<div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;">';
+    html+=metricCard('Raw groundnuts', stock.kgRemaining.toFixed(1)+' kg', stock.kgRemaining<5?'low':'');
+    html+=metricCard('Containers &amp; lids', Math.round(stock.containersRemaining)+' pcs', stock.containersRemaining<10?'low':'');
+    html+=metricCard('Jars', Math.round(stock.jarsRemaining)+' jars', stock.jarsRemaining<5?'low':'');
+    html+='</div>';
+  }
+  html+='</div>';
+
   html+='<div class="card"><h2>Sales trend <span class="tag">last 14 days</span></h2><div class="chart-wrap"><canvas id="trendChart"></canvas></div><div class="legend-row"><span><span class="legend-dot" style="background:#8B4C2E;"></span>Groundnuts</span><span><span class="legend-dot" style="background:#B5791E;"></span>Peanut butter</span></div></div>';
   html+='<div class="card"><h2>Where the money goes</h2>';
   if(t.totalExp===0){ html+='<p class="empty">No expenses logged yet.</p>'; }
@@ -397,6 +527,11 @@ function renderDashboard(){
 }
 
 /* ---------- SALES ---------- */
+function saleMatchesFilter(s){
+  if(!saleFilter) return true;
+  var f = saleFilter.toLowerCase();
+  return productLabel(s.product).toLowerCase().indexOf(f)>=0 || fmtDate(s.sale_date).toLowerCase().indexOf(f)>=0;
+}
 function renderSales(){
   var t = totals();
   var html='<div class="card"><h2>Log a sale</h2>';
@@ -406,11 +541,24 @@ function renderSales(){
   html+='<div class="section-total" id="saleTotalPreview"><span>Total</span><span class="figures">KSh 0</span></div>';
   html+='<button class="btn btn-primary" id="addSaleBtn">Add sale</button></div>';
   html+='<div class="metrics">'+metricCard('Groundnuts sold', t.qtyGn+' pieces','')+metricCard('Peanut butter sold', t.qtyPb+' jars','')+'</div>';
+
   html+='<div class="card"><h2>Sales log <span class="tag">'+state.sales.length+' entries</span></h2>';
-  if(state.sales.length===0){ html+='<p class="empty">No sales logged yet.</p>'; }
+  html+='<div class="filter-bar"><input type="text" id="saleSearch" placeholder="Search by product or date&hellip;" value="'+escapeHtml(saleFilter)+'"></div>';
+  var filtered = state.sales.filter(saleMatchesFilter);
+  if(filtered.length===0){ html+='<p class="empty">'+(state.sales.length?'No sales match that search.':'No sales logged yet.')+'</p>'; }
   else{
-    state.sales.forEach(function(s){
-      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(s.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(s.product)+'</span><div class="entry-title figures">'+money(Number(s.qty)*Number(s.unit_price))+'</div><div class="entry-sub">'+s.qty+' '+productUnit(s.product)+(Number(s.qty)===1?'':'s')+' &middot; '+fmtDate(s.sale_date)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-del" data-del-sale="'+s.id+'">Delete</button></div></div>';
+    filtered.forEach(function(s){
+      if(editingSaleId === s.id){
+        html+='<div class="edit-box">';
+        html+='<label>Date</label><input type="date" id="editSaleDate_'+s.id+'" value="'+new Date(s.sale_date).toISOString().slice(0,10)+'">';
+        html+='<label>Product</label><select id="editSaleProduct_'+s.id+'"><option value="groundnuts"'+(s.product==='groundnuts'?' selected':'')+'>Groundnuts</option><option value="peanutbutter"'+(s.product==='peanutbutter'?' selected':'')+'>Peanut butter</option></select>';
+        html+='<label>Quantity</label><input type="number" id="editSaleQty_'+s.id+'" min="1" step="1" value="'+s.qty+'">';
+        html+='<label>Unit price (KSh)</label><input type="number" id="editSalePrice_'+s.id+'" min="0" step="1" value="'+s.unit_price+'">';
+        html+='<div class="edit-actions"><button class="btn btn-ghost" data-cancel-sale="'+s.id+'">Cancel</button><button class="btn btn-primary" style="margin-top:0;" data-save-sale="'+s.id+'">Save</button></div>';
+        html+='</div>';
+      } else {
+        html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(s.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(s.product)+'</span><div class="entry-title figures">'+money(Number(s.qty)*Number(s.unit_price))+'</div><div class="entry-sub">'+s.qty+' '+productUnit(s.product)+(Number(s.qty)===1?'':'s')+' &middot; '+fmtDate(s.sale_date)+addedByTag(s.created_by)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-edit" data-edit-sale="'+s.id+'">Edit</button><button class="btn btn-sm btn-del" data-del-sale="'+s.id+'">Delete</button></div></div>';
+      }
     });
     html+='<div class="section-total"><span>Total revenue</span><span class="figures">'+money(t.totalRev)+'</span></div>';
   }
@@ -429,14 +577,63 @@ function renderSales(){
       await loadAll(); showToast('Sale logged'); renderSales();
     }catch(e){ showToast(e.message); }
   });
+
+  var saleSearch = document.getElementById('saleSearch');
+  saleSearch.addEventListener('input', function(){ saleFilter = saleSearch.value; renderSales(); setTimeout(function(){ var el=document.getElementById('saleSearch'); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); } },0); });
+
   document.querySelectorAll('[data-del-sale]').forEach(function(btn){
     btn.addEventListener('click', async function(){
       try{ await api('/sales/'+btn.getAttribute('data-del-sale'),{method:'DELETE'}); await loadAll(); renderSales(); }catch(e){ showToast(e.message); }
     });
   });
+  document.querySelectorAll('[data-edit-sale]').forEach(function(btn){
+    btn.addEventListener('click', function(){ editingSaleId = btn.getAttribute('data-edit-sale'); renderSales(); });
+  });
+  document.querySelectorAll('[data-cancel-sale]').forEach(function(btn){
+    btn.addEventListener('click', function(){ editingSaleId = null; renderSales(); });
+  });
+  document.querySelectorAll('[data-save-sale]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      var id = btn.getAttribute('data-save-sale');
+      try{
+        await api('/sales/'+id, {method:'PATCH', body: JSON.stringify({
+          sale_date: document.getElementById('editSaleDate_'+id).value,
+          product: document.getElementById('editSaleProduct_'+id).value,
+          qty: parseFloat(document.getElementById('editSaleQty_'+id).value),
+          unit_price: parseFloat(document.getElementById('editSalePrice_'+id).value)
+        })});
+        editingSaleId = null;
+        await loadAll(); showToast('Sale updated'); renderSales();
+      }catch(e){ showToast(e.message); }
+    });
+  });
 }
 
 /* ---------- DEBTS ---------- */
+function debtMatchesFilter(d){
+  if(!debtFilter) return true;
+  var f = debtFilter.toLowerCase();
+  return d.name.toLowerCase().indexOf(f)>=0 || productLabel(d.product).toLowerCase().indexOf(f)>=0;
+}
+function renderDebtRow(d){
+  if(editingDebtId === d.id){
+    var box='<div class="edit-box">';
+    box+='<label>Name</label><input type="text" id="editDebtName_'+d.id+'" value="'+escapeHtml(d.name)+'">';
+    box+='<div class="row2"><div><label>Product</label><select id="editDebtProduct_'+d.id+'"><option value="groundnuts"'+(d.product==='groundnuts'?' selected':'')+'>Groundnuts</option><option value="peanutbutter"'+(d.product==='peanutbutter'?' selected':'')+'>Peanut butter</option></select></div><div><label>Quantity</label><input type="number" id="editDebtQty_'+d.id+'" min="0" step="1" value="'+d.qty+'"></div></div>';
+    box+='<label>Amount (KSh)</label><input type="number" id="editDebtAmount_'+d.id+'" min="0" step="1" value="'+d.amount+'">';
+    box+='<label>Date</label><input type="date" id="editDebtDate_'+d.id+'" value="'+new Date(d.debt_date).toISOString().slice(0,10)+'">';
+    box+='<div class="edit-actions"><button class="btn btn-ghost" data-cancel-debt="'+d.id+'">Cancel</button><button class="btn btn-primary" style="margin-top:0;" data-save-debt="'+d.id+'">Save</button></div>';
+    box+='</div>';
+    return box;
+  }
+  return '<div class="entry-row"><div class="entry-main"><span class="pill '+(d.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(d.product)+'</span><div class="entry-title">'+escapeHtml(d.name)+'</div><div class="entry-sub figures">'+money(d.amount)+' &middot; '+d.qty+' '+productUnit(d.product)+(Number(d.qty)===1?'':'s')+' &middot; '+fmtDate(d.debt_date)+addedByTag(d.created_by)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-edit" data-edit-debt="'+d.id+'">Edit</button><button class="btn btn-sm btn-paid" data-pay-debt="'+d.id+'">Mark paid</button><button class="btn btn-sm btn-del" data-del-debt="'+d.id+'">Delete</button></div></div>';
+}
+function isCurrentMonth(dateStr){
+  var now = new Date();
+  var curYM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  return new Date(dateStr).toISOString().slice(0,7) === curYM;
+}
+
 function renderDebts(){
   var unpaid = state.debts.filter(function(d){return !d.paid;});
   var paid = state.debts.filter(function(d){return d.paid;});
@@ -448,18 +645,27 @@ function renderDebts(){
   html+='<label>Date</label><input type="date" id="debtDate" value="'+todayStr()+'">';
   html+='<button class="btn btn-primary" id="addDebtBtn">Add debt</button></div>';
   html+='<div class="metrics" style="grid-template-columns:1fr;">'+metricCard('Outstanding debt',money(outstanding),'debt')+'</div>';
-  html+='<div class="card"><h2>Unpaid <span class="tag">'+unpaid.length+'</span></h2>';
-  if(unpaid.length===0){ html+='<p class="empty">No outstanding debts. Nice.</p>'; }
-  else{
-    unpaid.forEach(function(d){
-      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(d.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(d.product)+'</span><div class="entry-title">'+escapeHtml(d.name)+'</div><div class="entry-sub figures">'+money(d.amount)+' &middot; '+d.qty+' '+productUnit(d.product)+(Number(d.qty)===1?'':'s')+' &middot; '+fmtDate(d.debt_date)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-paid" data-pay-debt="'+d.id+'">Mark paid</button><button class="btn btn-sm btn-del" data-del-debt="'+d.id+'">Delete</button></div></div>';
-    });
-  }
-  html+='</div><div class="card"><h2>Paid history <span class="tag">'+paid.length+'</span></h2>';
+
+  html+='<div class="card"><div class="filter-bar"><input type="text" id="debtSearch" placeholder="Search by name or product&hellip;" value="'+escapeHtml(debtFilter)+'"></div></div>';
+  var filteredUnpaid = unpaid.filter(debtMatchesFilter);
+  var thisMonth = filteredUnpaid.filter(function(d){ return isCurrentMonth(d.debt_date); });
+  var earlier = filteredUnpaid.filter(function(d){ return !isCurrentMonth(d.debt_date); });
+
+  html+='<div class="card"><h2>Unpaid &mdash; this month <span class="tag">'+thisMonth.length+'</span></h2>';
+  if(thisMonth.length===0){ html+='<p class="empty">'+(unpaid.length?'None this month.':'No outstanding debts. Nice.')+'</p>'; }
+  else{ thisMonth.forEach(function(d){ html += renderDebtRow(d); }); }
+  html+='</div>';
+
+  html+='<div class="card"><h2>Unpaid &mdash; from earlier months <span class="tag">'+earlier.length+'</span></h2>';
+  if(earlier.length===0){ html+='<p class="empty">No older unpaid debts.</p>'; }
+  else{ earlier.forEach(function(d){ html += renderDebtRow(d); }); }
+  html+='</div>';
+
+  html+='<div class="card"><h2>Paid history <span class="tag">'+paid.length+'</span></h2>';
   if(paid.length===0){ html+='<p class="empty">Paid debts will show up here.</p>'; }
   else{
     paid.forEach(function(d){
-      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(d.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(d.product)+'</span><div class="entry-title">'+escapeHtml(d.name)+'</div><div class="entry-sub figures">'+money(d.amount)+' &middot; paid '+fmtDate(d.paid_date||d.debt_date)+'</div></div><div class="stamp">PAID</div></div>';
+      html+='<div class="entry-row"><div class="entry-main"><span class="pill '+(d.product==='peanutbutter'?'pill-pb':'pill-groundnut')+'">'+productLabel(d.product)+'</span><div class="entry-title">'+escapeHtml(d.name)+'</div><div class="entry-sub figures">'+money(d.amount)+' &middot; paid '+fmtDate(d.paid_date||d.debt_date)+addedByTag(d.created_by)+'</div></div><div class="stamp">PAID</div></div>';
     });
   }
   html+='</div>';
@@ -479,6 +685,10 @@ function renderDebts(){
       await loadAll(); showToast('Debt added'); renderDebts();
     }catch(e){ showToast(e.message); }
   });
+
+  var debtSearch = document.getElementById('debtSearch');
+  debtSearch.addEventListener('input', function(){ debtFilter = debtSearch.value; renderDebts(); setTimeout(function(){ var el=document.getElementById('debtSearch'); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); } },0); });
+
   document.querySelectorAll('[data-pay-debt]').forEach(function(btn){
     btn.addEventListener('click', async function(){
       try{ await api('/debts/'+btn.getAttribute('data-pay-debt')+'/pay',{method:'PATCH'}); await loadAll(); showToast('Marked as paid'); renderDebts(); }catch(e){ showToast(e.message); }
@@ -489,25 +699,69 @@ function renderDebts(){
       try{ await api('/debts/'+btn.getAttribute('data-del-debt'),{method:'DELETE'}); await loadAll(); renderDebts(); }catch(e){ showToast(e.message); }
     });
   });
+  document.querySelectorAll('[data-edit-debt]').forEach(function(btn){
+    btn.addEventListener('click', function(){ editingDebtId = btn.getAttribute('data-edit-debt'); renderDebts(); });
+  });
+  document.querySelectorAll('[data-cancel-debt]').forEach(function(btn){
+    btn.addEventListener('click', function(){ editingDebtId = null; renderDebts(); });
+  });
+  document.querySelectorAll('[data-save-debt]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      var id = btn.getAttribute('data-save-debt');
+      try{
+        await api('/debts/'+id, {method:'PATCH', body: JSON.stringify({
+          name: document.getElementById('editDebtName_'+id).value.trim(),
+          product: document.getElementById('editDebtProduct_'+id).value,
+          qty: parseFloat(document.getElementById('editDebtQty_'+id).value)||0,
+          amount: parseFloat(document.getElementById('editDebtAmount_'+id).value),
+          debt_date: document.getElementById('editDebtDate_'+id).value
+        })});
+        editingDebtId = null;
+        await loadAll(); showToast('Debt updated'); renderDebts();
+      }catch(e){ showToast(e.message); }
+    });
+  });
 }
 
 /* ---------- EXPENSES ---------- */
+function expenseMatchesFilter(e){
+  if(!expenseFilter) return true;
+  var f = expenseFilter.toLowerCase();
+  return (e.category||'').toLowerCase().indexOf(f)>=0 || (e.description||'').toLowerCase().indexOf(f)>=0 || businessLabel(e.business).toLowerCase().indexOf(f)>=0;
+}
 function renderExpenses(){
   var t = totals();
   var html='<div class="card"><h2>Add an expense</h2>';
   html+='<label>Business</label><select id="expBusiness"><option value="groundnuts">Groundnuts</option><option value="peanutbutter">Peanut butter</option><option value="shared">Shared / overhead</option></select>';
   html+='<label>Category</label><select id="expCategory"></select>';
+  html+='<div id="expQtyRow" style="display:none;"><label id="expQtyLabel">Quantity purchased</label><input type="number" id="expQuantity" min="0" step="0.1"></div>';
   html+='<label>Note (optional)</label><input type="text" id="expDesc">';
   html+='<div class="row2"><div><label>Amount (KSh)</label><input type="number" id="expAmount" min="0" step="1"></div><div><label>Date</label><input type="date" id="expDate" value="'+todayStr()+'"></div></div>';
   html+='<button class="btn btn-primary" id="addExpBtn">Add expense</button></div>';
   html+='<div class="metrics">'+metricCard('Groundnuts biz',money(t.expByBiz.groundnuts),'')+metricCard('Peanut butter biz',money(t.expByBiz.peanutbutter),'')+metricCard('Shared / electricity',money(t.expByBiz.shared),'')+metricCard('Total expenses',money(t.totalExp),'debt')+'</div>';
+
+  html+='<div class="card"><div class="filter-bar"><input type="text" id="expSearch" placeholder="Search category, note, or business&hellip;" value="'+escapeHtml(expenseFilter)+'"></div></div>';
+
   ['groundnuts','peanutbutter','shared'].forEach(function(biz){
-    var items = state.expenses.filter(function(e){return e.business===biz;});
-    html+='<div class="card"><h2>'+businessLabel(biz)+' expenses <span class="tag">'+items.length+'</span></h2>';
-    if(items.length===0){ html+='<p class="empty">Nothing logged yet.</p>'; }
+    var items = state.expenses.filter(function(e){return e.business===biz;}).filter(expenseMatchesFilter);
+    var allItems = state.expenses.filter(function(e){return e.business===biz;});
+    html+='<div class="card"><h2>'+businessLabel(biz)+' expenses <span class="tag">'+allItems.length+'</span></h2>';
+    if(items.length===0){ html+='<p class="empty">'+(allItems.length?'No matches.':'Nothing logged yet.')+'</p>'; }
     else{
       items.forEach(function(e){
-        html+='<div class="entry-row"><div class="entry-main"><span class="pill '+pillClass(biz)+'">'+e.category+'</span><div class="entry-title figures">'+money(e.amount)+'</div><div class="entry-sub">'+(e.description?escapeHtml(e.description)+' &middot; ':'')+fmtDate(e.expense_date)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-del" data-del-exp="'+e.id+'">Delete</button></div></div>';
+        if(editingExpenseId === e.id){
+          html+='<div class="edit-box">';
+          html+='<label>Business</label><select id="editExpBusiness_'+e.id+'"><option value="groundnuts"'+(e.business==='groundnuts'?' selected':'')+'>Groundnuts</option><option value="peanutbutter"'+(e.business==='peanutbutter'?' selected':'')+'>Peanut butter</option><option value="shared"'+(e.business==='shared'?' selected':'')+'>Shared / overhead</option></select>';
+          html+='<label>Category</label><input type="text" id="editExpCategory_'+e.id+'" value="'+escapeHtml(e.category)+'">';
+          html+='<label>Note</label><input type="text" id="editExpDesc_'+e.id+'" value="'+escapeHtml(e.description||'')+'">';
+          html+='<div class="row2"><div><label>Amount (KSh)</label><input type="number" id="editExpAmount_'+e.id+'" value="'+e.amount+'"></div><div><label>Date</label><input type="date" id="editExpDate_'+e.id+'" value="'+new Date(e.expense_date).toISOString().slice(0,10)+'"></div></div>';
+          html+='<label>Quantity (optional)</label><input type="number" id="editExpQty_'+e.id+'" value="'+(e.quantity||'')+'">';
+          html+='<div class="edit-actions"><button class="btn btn-ghost" data-cancel-exp="'+e.id+'">Cancel</button><button class="btn btn-primary" style="margin-top:0;" data-save-exp="'+e.id+'">Save</button></div>';
+          html+='</div>';
+        } else {
+          var qtyBit = e.quantity ? (' &middot; '+e.quantity+' '+(e.unit||'')) : '';
+          html+='<div class="entry-row"><div class="entry-main"><span class="pill '+pillClass(biz)+'">'+escapeHtml(e.category)+'</span><div class="entry-title figures">'+money(e.amount)+'</div><div class="entry-sub">'+(e.description?escapeHtml(e.description)+' &middot; ':'')+fmtDate(e.expense_date)+qtyBit+addedByTag(e.created_by)+'</div></div><div class="entry-actions"><button class="btn btn-sm btn-edit" data-edit-exp="'+e.id+'">Edit</button><button class="btn btn-sm btn-del" data-del-exp="'+e.id+'">Delete</button></div></div>';
+        }
       });
       html+='<div class="section-total"><span>Subtotal</span><span class="figures">'+money(t.expByBiz[biz])+'</span></div>';
     }
@@ -516,20 +770,68 @@ function renderExpenses(){
   document.getElementById('app').innerHTML = wrapPanel('expenses', html);
 
   var bizSelect=document.getElementById('expBusiness'), catSelect=document.getElementById('expCategory');
-  function refreshCats(){ catSelect.innerHTML = EXPENSE_CATEGORIES[bizSelect.value].map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join(''); }
+  function refreshCats(){
+    catSelect.innerHTML = EXPENSE_CATEGORIES[bizSelect.value].map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
+    refreshQtyRow();
+  }
+  function refreshQtyRow(){
+    var unit = categoryUnit(catSelect.value);
+    var row = document.getElementById('expQtyRow');
+    if(unit){ row.style.display='block'; document.getElementById('expQtyLabel').textContent = 'Quantity purchased ('+unit+')'; }
+    else { row.style.display='none'; }
+  }
   bizSelect.addEventListener('change', refreshCats);
+  catSelect.addEventListener('change', refreshQtyRow);
   refreshCats();
+
   document.getElementById('addExpBtn').addEventListener('click', async function(){
     var amount=parseFloat(document.getElementById('expAmount').value);
     if(!amount||amount<=0){ showToast('Enter an amount above 0'); return; }
+    var unit = categoryUnit(catSelect.value);
+    var qtyVal = document.getElementById('expQuantity').value;
     try{
-      await api('/expenses',{method:'POST', body: JSON.stringify({ business:bizSelect.value, category:catSelect.value, description:document.getElementById('expDesc').value.trim(), amount:amount, expense_date: document.getElementById('expDate').value||todayStr() })});
+      await api('/expenses',{method:'POST', body: JSON.stringify({
+        business:bizSelect.value, category:catSelect.value,
+        description:document.getElementById('expDesc').value.trim(),
+        amount:amount, expense_date: document.getElementById('expDate').value||todayStr(),
+        quantity: (unit && qtyVal) ? parseFloat(qtyVal) : null,
+        unit: unit
+      })});
       await loadAll(); showToast('Expense logged'); renderExpenses();
     }catch(e){ showToast(e.message); }
   });
+
+  var expSearch = document.getElementById('expSearch');
+  expSearch.addEventListener('input', function(){ expenseFilter = expSearch.value; renderExpenses(); setTimeout(function(){ var el=document.getElementById('expSearch'); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); } },0); });
+
   document.querySelectorAll('[data-del-exp]').forEach(function(btn){
     btn.addEventListener('click', async function(){
       try{ await api('/expenses/'+btn.getAttribute('data-del-exp'),{method:'DELETE'}); await loadAll(); renderExpenses(); }catch(e){ showToast(e.message); }
+    });
+  });
+  document.querySelectorAll('[data-edit-exp]').forEach(function(btn){
+    btn.addEventListener('click', function(){ editingExpenseId = btn.getAttribute('data-edit-exp'); renderExpenses(); });
+  });
+  document.querySelectorAll('[data-cancel-exp]').forEach(function(btn){
+    btn.addEventListener('click', function(){ editingExpenseId = null; renderExpenses(); });
+  });
+  document.querySelectorAll('[data-save-exp]').forEach(function(btn){
+    btn.addEventListener('click', async function(){
+      var id = btn.getAttribute('data-save-exp');
+      try{
+        var qtyEl = document.getElementById('editExpQty_'+id);
+        await api('/expenses/'+id, {method:'PATCH', body: JSON.stringify({
+          business: document.getElementById('editExpBusiness_'+id).value,
+          category: document.getElementById('editExpCategory_'+id).value.trim(),
+          description: document.getElementById('editExpDesc_'+id).value.trim(),
+          amount: parseFloat(document.getElementById('editExpAmount_'+id).value),
+          expense_date: document.getElementById('editExpDate_'+id).value,
+          quantity: qtyEl.value ? parseFloat(qtyEl.value) : null,
+          unit: null
+        })});
+        editingExpenseId = null;
+        await loadAll(); showToast('Expense updated'); renderExpenses();
+      }catch(e){ showToast(e.message); }
     });
   });
 }
@@ -548,6 +850,10 @@ function renderReports(){
     var m = new Date(s.sale_date).toISOString().slice(0,7);
     if(gnByMonth.hasOwnProperty(m)){ if(s.product==='peanutbutter') pbByMonth[m]+=Number(s.qty)*Number(s.unit_price); else gnByMonth[m]+=Number(s.qty)*Number(s.unit_price); }
   });
+  state.debts.forEach(function(d){
+    var m = new Date(d.debt_date).toISOString().slice(0,7);
+    if(gnByMonth.hasOwnProperty(m)){ if(d.product==='peanutbutter') pbByMonth[m]+=Number(d.amount); else gnByMonth[m]+=Number(d.amount); }
+  });
   if(charts.month) charts.month.destroy();
   charts.month = new Chart(document.getElementById('monthChart'),{type:'bar',data:{labels:months.map(function(m){return new Date(m+'-02').toLocaleDateString('en-KE',{month:'short',year:'2-digit'});}),datasets:[
     {label:'Groundnuts',data:months.map(function(m){return gnByMonth[m];}),backgroundColor:'#8B4C2E',borderRadius:4},
@@ -560,13 +866,20 @@ function generateReport(from,to){
   if(!from||!to||from>to){ showToast('Check your date range'); return; }
   var salesR = state.sales.filter(function(s){ var d=new Date(s.sale_date).toISOString().slice(0,10); return d>=from && d<=to; });
   var expR = state.expenses.filter(function(e){ var d=new Date(e.expense_date).toISOString().slice(0,10); return d>=from && d<=to; });
+  // Debts count toward the period they were originally sold in (debt_date),
+  // never the period they happen to get paid in.
+  var debtsR = state.debts.filter(function(d){ var dd=new Date(d.debt_date).toISOString().slice(0,10); return dd>=from && dd<=to; });
   var qtyGn=0,revGn=0,qtyPb=0,revPb=0;
   salesR.forEach(function(s){ var tot=Number(s.qty)*Number(s.unit_price); if(s.product==='peanutbutter'){qtyPb+=Number(s.qty);revPb+=tot;} else {qtyGn+=Number(s.qty);revGn+=tot;} });
+  var qtyGnCredit=0, qtyPbCredit=0, revGnCredit=0, revPbCredit=0;
+  debtsR.forEach(function(d){ if(d.product==='peanutbutter'){qtyPbCredit+=Number(d.qty);revPbCredit+=Number(d.amount);} else {qtyGnCredit+=Number(d.qty);revGnCredit+=Number(d.amount);} });
+  qtyGn += qtyGnCredit; revGn += revGnCredit; qtyPb += qtyPbCredit; revPb += revPbCredit;
   var expByBiz={groundnuts:0,peanutbutter:0,shared:0}, expByCat={};
   expR.forEach(function(e){ expByBiz[e.business]+=Number(e.amount); var key=businessLabel(e.business)+' &middot; '+e.category; expByCat[key]=(expByCat[key]||0)+Number(e.amount); });
   var totalRev=revGn+revPb, totalExp=expByBiz.groundnuts+expByBiz.peanutbutter+expByBiz.shared;
   var outstanding = state.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+Number(d.amount);},0);
-  var html='<div class="report-box"><h3 style="font-size:14px;margin-bottom:6px;">Sales, '+fmtDate(from)+' &ndash; '+fmtDate(to)+'</h3><table><tr><td>Groundnuts &mdash; '+qtyGn+' pieces</td><td>'+money(revGn)+'</td></tr><tr><td>Peanut butter &mdash; '+qtyPb+' jars</td><td>'+money(revPb)+'</td></tr><tr><td><strong>Total revenue</strong></td><td><strong>'+money(totalRev)+'</strong></td></tr></table></div>';
+  var creditNote = (revGnCredit+revPbCredit) > 0 ? ' <span style="color:var(--ink-soft);font-weight:400;">(includes '+money(revGnCredit+revPbCredit)+' sold on credit this period, whenever it gets paid)</span>' : '';
+  var html='<div class="report-box"><h3 style="font-size:14px;margin-bottom:6px;">Sales, '+fmtDate(from)+' &ndash; '+fmtDate(to)+'</h3><table><tr><td>Groundnuts &mdash; '+qtyGn+' pieces</td><td>'+money(revGn)+'</td></tr><tr><td>Peanut butter &mdash; '+qtyPb+' jars</td><td>'+money(revPb)+'</td></tr><tr><td><strong>Total revenue</strong></td><td><strong>'+money(totalRev)+'</strong></td></tr></table>'+(creditNote?'<p style="font-size:11.5px;margin-top:6px;">'+creditNote+'</p>':'')+'</div>';
   html+='<div class="report-box"><h3 style="font-size:14px;margin-bottom:6px;">Expenses by category</h3><table>';
   var keys=Object.keys(expByCat);
   if(keys.length===0){ html+='<tr><td colspan="2">No expenses in this period.</td></tr>'; }
@@ -599,16 +912,23 @@ window.addEventListener('resize', moveIndicator);
 document.getElementById('settingsBtn').addEventListener('click', function(){
   document.getElementById('priceGroundnut').value = state.settings.price_groundnut;
   document.getElementById('pricePB').value = state.settings.price_pb;
+  document.getElementById('piecesPerKg').value = state.settings.pieces_per_kg;
   document.getElementById('settingsModal').classList.add('open');
 });
 document.getElementById('closeSettings').addEventListener('click', function(){ document.getElementById('settingsModal').classList.remove('open'); });
 document.getElementById('saveSettings').addEventListener('click', async function(){
-  var pg=parseFloat(document.getElementById('priceGroundnut').value), pp=parseFloat(document.getElementById('pricePB').value);
+  var pg=parseFloat(document.getElementById('priceGroundnut').value);
+  var pp=parseFloat(document.getElementById('pricePB').value);
+  var ppk=parseFloat(document.getElementById('piecesPerKg').value);
   try{
-    await api('/settings',{method:'PUT', body: JSON.stringify({ price_groundnut: pg>0?pg:state.settings.price_groundnut, price_pb: pp>0?pp:state.settings.price_pb })});
+    await api('/settings',{method:'PUT', body: JSON.stringify({
+      price_groundnut: pg>0?pg:state.settings.price_groundnut,
+      price_pb: pp>0?pp:state.settings.price_pb,
+      pieces_per_kg: ppk>0?ppk:state.settings.pieces_per_kg
+    })});
     await loadAll();
     document.getElementById('settingsModal').classList.remove('open');
-    showToast('Prices updated');
+    showToast('Settings updated');
     switchTab(activeTab);
   }catch(e){ showToast(e.message); }
 });
@@ -658,6 +978,10 @@ async function bootApp(){
   }catch(e){
     setSyncStrip('Could not reach the server', true);
   }
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
 }
 
 (async function init(){
