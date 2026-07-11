@@ -105,6 +105,56 @@ function filterByDate(rows,dateField,range){
     });
 
 }
+/**
+ * Groups all unpaid debts by customer.
+ * This lets the chatbot think in terms of customers instead of rows.
+ */
+function groupDebtorsByCustomer(debts) {
+
+    const customers = {};
+
+    debts
+        .filter(d => !d.paid)
+        .forEach(d => {
+
+            const name = d.name.trim();
+
+            if (!customers[name]) {
+
+                customers[name] = {
+
+                    name,
+
+                    totalDebt: 0,
+
+                    groundnuts: 0,
+
+                    peanutButter: 0
+
+                };
+
+            }
+
+            customers[name].totalDebt += Number(d.amount);
+
+            if (d.product === "groundnuts") {
+
+                customers[name].groundnuts += Number(d.qty);
+
+            }
+
+            if (d.product === "peanutbutter") {
+
+                customers[name].peanutButter += Number(d.qty);
+
+            }
+
+        });
+
+    return Object.values(customers)
+        .sort((a,b)=>b.totalDebt-a.totalDebt);
+
+}
 
 /**
  * Business Summary
@@ -414,6 +464,7 @@ function answerQuestion(question, data) {
         (a, d) => a + Number(d.amount),
         0
     );
+    const customerDebts = groupDebtorsByCustomer(data.debts);
 
     const businessStats = {
 
@@ -468,25 +519,31 @@ if (
     // ==========================
     if (/who (owes|owe)|outstanding debt|debtors|unpaid/.test(q)) {
 
-        if (!unpaidDebts.length) {
+    if (!customerDebts.length) {
 
-            return "Nobody currently owes you money — all debts are paid.";
-
-        }
-
-        const top = unpaidDebts
-            .slice()
-            .sort((a, b) => b.amount - a.amount)
-            .slice(0, 8);
-
-        const lines = top.map(d =>
-            `${d.name} owes ${money(d.amount)} (${d.product === "peanutbutter" ? "peanut butter" : "groundnuts"})`
-        );
-
-        return `Outstanding debt is ${money(outstanding)} across ${unpaidDebts.length} people. Biggest: ${lines.join("; ")}.`;
+        return "Nobody currently owes you money.";
 
     }
 
+    const top = customerDebts.slice(0,8);
+
+    const lines = top.map(c => {
+
+        const items = [];
+
+        if(c.peanutButter)
+            items.push(`${c.peanutButter} Peanut Butter`);
+
+        if(c.groundnuts)
+            items.push(`${c.groundnuts} Groundnuts`);
+
+        return `${c.name} owes ${money(c.totalDebt)} (${items.join(", ")})`;
+
+    });
+
+    return `Outstanding debt is ${money(outstanding)} across ${customerDebts.length} customers.\n\n${lines.join("\n")}`;
+
+}
     // Profit
     if (/profit/.test(q)) {
 
