@@ -505,10 +505,6 @@ const customer = customerDebts.find(c => {
     // ==========================
 // Customer lookup
 // ==========================
-const customer = customerDebts.find(c =>
-    q.includes(c.name.toLowerCase())
-);
-
 if (
     customer &&
     /owe|debt|customer|tell me about|summary|who is/.test(q)
