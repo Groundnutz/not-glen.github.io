@@ -472,6 +472,16 @@ function answerQuestion(question, data) {
         0
     );
     const customerDebts = groupDebtorsByCustomer(data.debts);
+    // ==========================
+// Detect customer mentioned in the question
+// ==========================
+const customer = customerDebts.find(c => {
+
+    const customerName = c.name.trim().toLowerCase();
+
+    return q.includes(customerName);
+
+});
 
     const businessStats = {
 
@@ -552,6 +562,43 @@ if (
         return getBusinessSummary(businessStats);
 
     }
+    // ==========================
+// Customer Summary
+// ==========================
+if (
+    customer &&
+    (
+        q.includes("about") ||
+        q.includes("owe") ||
+        q.includes("debt") ||
+        q.includes("customer") ||
+        q.includes("summary")
+    )
+) {
+
+    const items = [];
+
+    if (customer.peanutButter > 0) {
+        items.push(`🥜 Peanut Butter: ${customer.peanutButter}`);
+    }
+
+    if (customer.groundnuts > 0) {
+        items.push(`🌰 Groundnuts: ${customer.groundnuts}`);
+    }
+
+    return `
+👤 CUSTOMER SUMMARY
+
+Customer: ${customer.name}
+
+Outstanding Debt: ${money(customer.totalDebt)}
+
+Items Owed
+
+${items.join("\n")}
+`.trim();
+
+}
 
     // ==========================
     // Debts
