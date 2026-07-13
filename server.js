@@ -3,7 +3,7 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const { pool, initSchema } = require('./db');
 const { signToken, requireAuth } = require('./auth');
-const { answerQuestion } = require('./chatbot');
+const { answerQuestion } = require('./chatbot/index');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
