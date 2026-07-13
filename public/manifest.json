@@ -1,10 +1,12 @@
 {
-  "name": "Groundnut & Peanut Butter Ledger",
-  "short_name": "Groundnut Ledger",
+  "name": "Groundnut Ledger",
+  "short_name": "Ledger",
+  "description": "Groundnut Ledger Business Management System",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F1E6CF",
-  "theme_color": "#2E2115",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2E7D32",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Groundnut & Peanut Butter Ledger</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#2E2115">
+<meta name="theme-color" content="#2E7D32">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Groundnut Ledger">
 <link rel="apple-touch-icon" href="/icon-192.png">
@@ -163,6 +163,17 @@
   .autocomplete-item .no-match{color:var(--ink);}
   .autocomplete-empty{padding:12px;font-size:13px;color:var(--ink-soft);text-align:center;}
   .autocomplete-wrapper{position:relative;}
+
+  /* PWA Install Button */
+  .install-btn{position:fixed;bottom:90px;right:16px;background:#2E7D32;color:#fff;border:none;border-radius:50px;padding:12px 20px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(46,125,50,0.3);z-index:25;display:none;align-items:center;gap:6px;}
+  .install-btn.show{display:flex;}
+  @media (min-width:760px){.install-btn{bottom:24px;}}
+
+  /* Offline Indicator */
+  .offline-indicator{position:fixed;top:62px;left:0;right:0;background:#2E2115;color:#fff;padding:6px 12px;font-size:12px;text-align:center;z-index:18;display:none;align-items:center;justify-content:center;gap:6px;}
+  .offline-indicator.show{display:flex;}
+  .offline-indicator.online{background:#4B7345;}
+  .offline-indicator.offline{background:#A23B2E;}
 </style>
 </head>
 <body>
@@ -231,6 +242,7 @@
     </div>
   </header>
   <div class="sync-strip" id="syncStrip">Connecting&hellip;</div>
+  <div class="offline-indicator" id="offlineIndicator">🟢 Online</div>
 
   <nav class="tabs-desktop" id="tabsDesktop">
     <button data-tab="dashboard" class="active">Dashboard</button>
@@ -272,6 +284,8 @@
       <button id="chatSendBtn">Send</button>
     </div>
   </div>
+
+  <button class="install-btn" id="installBtn">Install App</button>
 
   <div class="modal-overlay" id="settingsModal">
     <div class="modal">
@@ -1357,9 +1371,67 @@ async function bootApp(){
   }
 }
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
+// Register service worker only in production
+if('serviceWorker' in navigator && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'){
+  window.addEventListener('load', function(){ 
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(registration){
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch(function(error){
+        console.log('Service Worker registration failed:', error);
+      }); 
+  });
 }
+
+/* ---------- PWA INSTALL PROMPT ---------- */
+var deferredPrompt;
+var installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.add('show');
+});
+
+installBtn.addEventListener('click', function(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choiceResult){
+      if(choiceResult.outcome === 'accepted'){
+        installBtn.classList.remove('show');
+      }
+      deferredPrompt = null;
+    });
+  }
+});
+
+window.addEventListener('appinstalled', function(){
+  installBtn.classList.remove('show');
+  deferredPrompt = null;
+});
+
+/* ---------- OFFLINE DETECTION ---------- */
+var offlineIndicator = document.getElementById('offlineIndicator');
+
+function updateOnlineStatus(){
+  if(navigator.onLine){
+    offlineIndicator.textContent = '🟢 Online';
+    offlineIndicator.classList.remove('offline');
+    offlineIndicator.classList.add('online');
+  }else{
+    offlineIndicator.textContent = '🔴 Offline';
+    offlineIndicator.classList.remove('online');
+    offlineIndicator.classList.add('offline');
+  }
+  offlineIndicator.classList.add('show');
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// Initial status check
+updateOnlineStatus();
 
 (async function init(){
   var token = getToken();
