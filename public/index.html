@@ -152,6 +152,17 @@
   .chat-input-row button{background:var(--groundnut);color:#fff;border:none;border-radius:8px;padding:0 14px;font-weight:600;cursor:pointer;}
   .chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;}
   .chat-suggestions button{background:var(--bg-alt);border:none;border-radius:14px;padding:5px 10px;font-size:11.5px;color:var(--ink-soft);cursor:pointer;}
+
+  /* Custom Autocomplete */
+  .autocomplete-dropdown{position:absolute;background:var(--paper);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 12px rgba(46,33,21,0.15);max-height:240px;overflow-y:auto;z-index:100;width:100%;display:none;}
+  .autocomplete-dropdown.open{display:block;}
+  .autocomplete-item{padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--line);transition:background 0.15s;}
+  .autocomplete-item:last-child{border-bottom:none;}
+  .autocomplete-item:hover,.autocomplete-item.active{background:var(--bg-alt);}
+  .autocomplete-item .match{font-weight:600;color:var(--groundnut);}
+  .autocomplete-item .no-match{color:var(--ink);}
+  .autocomplete-empty{padding:12px;font-size:13px;color:var(--ink-soft);text-align:center;}
+  .autocomplete-wrapper{position:relative;}
 </style>
 </head>
 <body>
@@ -922,10 +933,108 @@ function getCustomerNames(){
   state.debts.forEach(function(d){ names[d.name.toLowerCase()] = d.name; });
   return Object.keys(names).map(function(k){ return names[k]; }).sort();
 }
+
+function setupAutocomplete(inputElement, dataSource){
+  var dropdown = document.createElement('div');
+  dropdown.className = 'autocomplete-dropdown';
+  var wrapper = document.createElement('div');
+  wrapper.className = 'autocomplete-wrapper';
+  inputElement.parentNode.insertBefore(wrapper, inputElement);
+  wrapper.appendChild(inputElement);
+  wrapper.appendChild(dropdown);
+  
+  var activeIndex = -1;
+  var currentItems = [];
+  
+  function highlightMatch(text, query){
+    if(!query) return '<span class="no-match">'+escapeHtml(text)+'</span>';
+    var idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if(idx === -1) return '<span class="no-match">'+escapeHtml(text)+'</span>';
+    var before = text.slice(0, idx);
+    var match = text.slice(idx, idx + query.length);
+    var after = text.slice(idx + query.length);
+    return '<span class="no-match">'+escapeHtml(before)+'</span><span class="match">'+escapeHtml(match)+'</span><span class="no-match">'+escapeHtml(after)+'</span>';
+  }
+  
+  function showSuggestions(query){
+    var allItems = dataSource();
+    var filtered = query ? allItems.filter(function(name){ return name.toLowerCase().indexOf(query.toLowerCase()) !== -1; }) : allItems;
+    currentItems = filtered.slice(0, 8);
+    dropdown.innerHTML = '';
+    
+    if(currentItems.length === 0){
+      dropdown.style.display = 'none';
+      return;
+    }
+    
+    currentItems.forEach(function(item, index){
+      var div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.innerHTML = highlightMatch(item, query);
+      div.addEventListener('click', function(){
+        inputElement.value = item;
+        dropdown.style.display = 'none';
+        inputElement.dispatchEvent(new Event('input'));
+      });
+      dropdown.appendChild(div);
+    });
+    
+    dropdown.style.display = 'block';
+    activeIndex = -1;
+  }
+  
+  inputElement.addEventListener('input', function(){
+    showSuggestions(this.value);
+  });
+  
+  inputElement.addEventListener('focus', function(){
+    showSuggestions(this.value);
+  });
+  
+  inputElement.addEventListener('blur', function(){
+    setTimeout(function(){ dropdown.style.display = 'none'; }, 150);
+  });
+  
+  inputElement.addEventListener('keydown', function(e){
+    if(dropdown.style.display === 'none') return;
+    
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, currentItems.length - 1);
+      updateActiveItem();
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, -1);
+      updateActiveItem();
+    } else if(e.key === 'Enter'){
+      e.preventDefault();
+      if(activeIndex >= 0 && currentItems[activeIndex]){
+        inputElement.value = currentItems[activeIndex];
+        dropdown.style.display = 'none';
+        inputElement.dispatchEvent(new Event('input'));
+      }
+    } else if(e.key === 'Escape'){
+      dropdown.style.display = 'none';
+    }
+  });
+  
+  function updateActiveItem(){
+    var items = dropdown.querySelectorAll('.autocomplete-item');
+    items.forEach(function(item, index){
+      item.classList.toggle('active', index === activeIndex);
+    });
+  }
+  
+  document.addEventListener('click', function(e){
+    if(!wrapper.contains(e.target)){
+      dropdown.style.display = 'none';
+    }
+  });
+}
 function renderDailyRow(row, product, index){
   var html='<div class="daily-row" data-index="'+index+'" data-product="'+product+'">';
   html+='<div class="daily-row-main">';
-  html+='<input type="text" class="daily-customer" placeholder="Customer name" value="'+escapeHtml(row.customer||'')+'" list="customer-list">';
+  html+='<input type="text" class="daily-customer" placeholder="Customer name" value="'+escapeHtml(row.customer||'')+'">';
   html+='<input type="number" class="daily-qty" placeholder="Qty" min="1" step="1" value="'+(row.qty||'')+'">';
   html+='<label class="daily-paid"><input type="checkbox" class="daily-paid-cb" '+(row.paid?'checked':'')+'> Paid</label>';
   html+='<input type="text" class="daily-notes" placeholder="Notes (optional)" value="'+escapeHtml(row.notes||'')+'">';
@@ -983,11 +1092,12 @@ function renderDaily(){
   html+='</div></div>';
 
   html+='<button class="btn btn-primary" id="processDayBtn" style="font-size:16px;padding:12px;">Process Day</button>';
-  html+='<datalist id="customer-list">';
-  getCustomerNames().forEach(function(name){ html+='<option value="'+escapeHtml(name)+'">'; });
-  html+='</datalist>';
 
   document.getElementById('app').innerHTML = wrapPanel('daily', html);
+
+  document.querySelectorAll('.daily-customer').forEach(function(input){
+    setupAutocomplete(input, getCustomerNames);
+  });
 
   document.getElementById('dailyDate').addEventListener('change', function(){
     dailyWorkspace.date = this.value;
