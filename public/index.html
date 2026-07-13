@@ -111,6 +111,18 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   @media (min-width:760px){.toast{bottom:24px;}}
 
+  /* Daily Workspace */
+  .daily-row{display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .daily-row:last-child{border-bottom:none;}
+  .daily-row-main{flex:1;display:grid;grid-template-columns:2fr 1fr auto 2fr auto;gap:8px;align-items:center;}
+  .daily-paid{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;white-space:nowrap;}
+  .daily-paid input{width:auto;margin:0;}
+  @media (max-width:640px){
+    .daily-row{flex-direction:column;}
+    .daily-row-main{grid-template-columns:1fr;gap:6px;}
+    .daily-paid{justify-content:flex-start;}
+  }
+
   /* Login / auth */
   .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
   .auth-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 4px 16px rgba(46,33,21,0.12);}
@@ -214,6 +226,7 @@
     <button data-tab="sales">Sales</button>
     <button data-tab="debts">Debts</button>
     <button data-tab="expenses">Expenses</button>
+    <button data-tab="daily">Daily Workspace</button>
     <button data-tab="reports">Reports</button>
     <div class="indicator" id="indicator"></div>
   </nav>
@@ -225,6 +238,7 @@
     <button data-tab="sales"><span class="ic">&#128181;</span>Sales</button>
     <button data-tab="debts"><span class="ic">&#128221;</span>Debts</button>
     <button data-tab="expenses"><span class="ic">&#128230;</span>Expenses</button>
+    <button data-tab="daily"><span class="ic">&#128197;</span>Daily</button>
     <button data-tab="reports"><span class="ic">&#128202;</span>Reports</button>
   </nav>
 
@@ -272,6 +286,7 @@ var lastSyncTs = null;
 var lastSnapshot = null;
 var editingSaleId = null, editingDebtId = null, editingExpenseId = null;
 var saleFilter = '', debtFilter = '', expenseFilter = '';
+var dailyWorkspace = { date: todayStr(), groundnuts: [], peanutbutter: [] };
 
 function uid(){ return Date.now().toString(36); }
 function money(n){ n = Math.round(n||0); return 'KSh ' + n.toLocaleString('en-KE'); }
@@ -890,6 +905,257 @@ function generateReport(from,to){
   document.getElementById('reportOutput').innerHTML = html;
 }
 
+/* ---------- DAILY WORKSPACE ---------- */
+function saveDailyWorkspace(){
+  localStorage.setItem('daily_workspace', JSON.stringify(dailyWorkspace));
+}
+function loadDailyWorkspace(){
+  var saved = localStorage.getItem('daily_workspace');
+  if(saved){
+    try{
+      dailyWorkspace = JSON.parse(saved);
+    }catch(e){}
+  }
+}
+function getCustomerNames(){
+  var names = {};
+  state.debts.forEach(function(d){ names[d.name.toLowerCase()] = d.name; });
+  return Object.keys(names).map(function(k){ return names[k]; }).sort();
+}
+function renderDailyRow(row, product, index){
+  var html='<div class="daily-row" data-index="'+index+'" data-product="'+product+'">';
+  html+='<div class="daily-row-main">';
+  html+='<input type="text" class="daily-customer" placeholder="Customer name" value="'+escapeHtml(row.customer||'')+'" list="customer-list">';
+  html+='<input type="number" class="daily-qty" placeholder="Qty" min="1" step="1" value="'+(row.qty||'')+'">';
+  html+='<label class="daily-paid"><input type="checkbox" class="daily-paid-cb" '+(row.paid?'checked':'')+'> Paid</label>';
+  html+='<input type="text" class="daily-notes" placeholder="Notes (optional)" value="'+escapeHtml(row.notes||'')+'">';
+  html+='</div>';
+  html+='<button class="btn btn-sm btn-del daily-del-row" data-index="'+index+'" data-product="'+product+'">&times;</button>';
+  html+='</div>';
+  return html;
+}
+function renderDaily(){
+  loadDailyWorkspace();
+  var html='<div class="card"><h2>Daily Sales Workspace</h2>';
+  html+='<label>Date</label><input type="date" id="dailyDate" value="'+dailyWorkspace.date+'">';
+  html+='</div>';
+
+  html+='<div class="card"><h2>Groundnut Sales</h2>';
+  html+='<div id="dailyGnTable">';
+  if(dailyWorkspace.groundnuts.length===0){
+    html+='<p class="empty">No groundnut sales entered yet.</p>';
+  }else{
+    dailyWorkspace.groundnuts.forEach(function(row, i){ html+=renderDailyRow(row, 'groundnuts', i); });
+  }
+  html+='</div>';
+  html+='<button class="btn btn-ghost" id="addGnRow">+ Add Row</button></div>';
+
+  html+='<div class="card"><h2>Peanut Butter Sales</h2>';
+  html+='<div id="dailyPbTable">';
+  if(dailyWorkspace.peanutbutter.length===0){
+    html+='<p class="empty">No peanut butter sales entered yet.</p>';
+  }else{
+    dailyWorkspace.peanutbutter.forEach(function(row, i){ html+=renderDailyRow(row, 'peanutbutter', i); });
+  }
+  html+='</div>';
+  html+='<button class="btn btn-ghost" id="addPbRow">+ Add Row</button></div>';
+
+  var gnQty = dailyWorkspace.groundnuts.reduce(function(a,r){ return a + (parseFloat(r.qty)||0); }, 0);
+  var pbQty = dailyWorkspace.peanutbutter.reduce(function(a,r){ return a + (parseFloat(r.qty)||0); }, 0);
+  var gnRev = gnQty * state.settings.price_groundnut;
+  var pbRev = pbQty * state.settings.price_pb;
+  var totalRev = gnRev + pbRev;
+  var allCustomers = dailyWorkspace.groundnuts.concat(dailyWorkspace.peanutbutter);
+  var uniqueCustomers = {};
+  allCustomers.forEach(function(r){ if(r.customer) uniqueCustomers[r.customer.toLowerCase()] = true; });
+  var customerCount = Object.keys(uniqueCustomers).length;
+  var unpaidCount = allCustomers.filter(function(r){ return !r.paid && r.customer; }).length;
+
+  html+='<div class="card"><h2>Live Summary</h2>';
+  html+='<div class="metrics" style="grid-template-columns:repeat(2,1fr);">';
+  html+=metricCard('Groundnuts Sold', gnQty+' pieces', '');
+  html+=metricCard('Peanut Butter Sold', pbQty+' jars', '');
+  html+=metricCard('Groundnut Revenue', money(gnRev), '');
+  html+=metricCard('Peanut Butter Revenue', money(pbRev), '');
+  html+=metricCard('Total Revenue', money(totalRev), 'profit');
+  html+=metricCard('Customers', customerCount, '');
+  html+=metricCard('Unpaid', unpaidCount, 'debt');
+  html+='</div></div>';
+
+  html+='<button class="btn btn-primary" id="processDayBtn" style="font-size:16px;padding:12px;">Process Day</button>';
+  html+='<datalist id="customer-list">';
+  getCustomerNames().forEach(function(name){ html+='<option value="'+escapeHtml(name)+'">'; });
+  html+='</datalist>';
+
+  document.getElementById('app').innerHTML = wrapPanel('daily', html);
+
+  document.getElementById('dailyDate').addEventListener('change', function(){
+    dailyWorkspace.date = this.value;
+    saveDailyWorkspace();
+  });
+
+  function addRow(product){
+    dailyWorkspace[product].push({ customer:'', qty:'', paid:false, notes:'' });
+    saveDailyWorkspace();
+    renderDaily();
+  }
+  document.getElementById('addGnRow').addEventListener('click', function(){ addRow('groundnuts'); });
+  document.getElementById('addPbRow').addEventListener('click', function(){ addRow('peanutbutter'); });
+
+  document.querySelectorAll('.daily-del-row').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(btn.getAttribute('data-index'));
+      var prod = btn.getAttribute('data-product');
+      dailyWorkspace[prod].splice(idx, 1);
+      saveDailyWorkspace();
+      renderDaily();
+    });
+  });
+
+  document.querySelectorAll('.daily-customer').forEach(function(input){
+    input.addEventListener('input', function(){
+      var row = this.closest('.daily-row');
+      var idx = parseInt(row.getAttribute('data-index'));
+      var prod = row.getAttribute('data-product');
+      dailyWorkspace[prod][idx].customer = this.value;
+      saveDailyWorkspace();
+    });
+  });
+
+  document.querySelectorAll('.daily-qty').forEach(function(input){
+    input.addEventListener('input', function(){
+      var row = this.closest('.daily-row');
+      var idx = parseInt(row.getAttribute('data-index'));
+      var prod = row.getAttribute('data-product');
+      var val = parseFloat(this.value);
+      if(val < 0){ this.value = ''; return; }
+      dailyWorkspace[prod][idx].qty = this.value;
+      saveDailyWorkspace();
+      renderDaily();
+    });
+  });
+
+  document.querySelectorAll('.daily-paid-cb').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var row = this.closest('.daily-row');
+      var idx = parseInt(row.getAttribute('data-index'));
+      var prod = row.getAttribute('data-product');
+      dailyWorkspace[prod][idx].paid = this.checked;
+      saveDailyWorkspace();
+      renderDaily();
+    });
+  });
+
+  document.querySelectorAll('.daily-notes').forEach(function(input){
+    input.addEventListener('input', function(){
+      var row = this.closest('.daily-row');
+      var idx = parseInt(row.getAttribute('data-index'));
+      var prod = row.getAttribute('data-product');
+      dailyWorkspace[prod][idx].notes = this.value;
+      saveDailyWorkspace();
+    });
+  });
+
+  document.getElementById('processDayBtn').addEventListener('click', async function(){
+    var gnTotal = dailyWorkspace.groundnuts.reduce(function(a,r){ return a + (parseFloat(r.qty)||0); }, 0);
+    var pbTotal = dailyWorkspace.peanutbutter.reduce(function(a,r){ return a + (parseFloat(r.qty)||0); }, 0);
+    if(gnTotal <= 0 && pbTotal <= 0){ showToast('Enter at least one sale'); return; }
+    
+    var hasInvalid = false;
+    dailyWorkspace.groundnuts.forEach(function(r){
+      if(r.qty && (parseFloat(r.qty) <= 0 || parseFloat(r.qty) !== parseFloat(r.qty))){ hasInvalid = true; }
+    });
+    dailyWorkspace.peanutbutter.forEach(function(r){
+      if(r.qty && (parseFloat(r.qty) <= 0 || parseFloat(r.qty) !== parseFloat(r.qty))){ hasInvalid = true; }
+    });
+    if(hasInvalid){ showToast('Quantities must be positive numbers'); return; }
+
+    try{
+      var salesPosted = 0;
+      var debtorsCreated = 0;
+      
+      if(gnTotal > 0){
+        await api('/sales', {method:'POST', body: JSON.stringify({
+          sale_date: dailyWorkspace.date,
+          product: 'groundnuts',
+          qty: gnTotal,
+          unit_price: state.settings.price_groundnut
+        })});
+        salesPosted++;
+      }
+      
+      if(pbTotal > 0){
+        await api('/sales', {method:'POST', body: JSON.stringify({
+          sale_date: dailyWorkspace.date,
+          product: 'peanutbutter',
+          qty: pbTotal,
+          unit_price: state.settings.price_pb
+        })});
+        salesPosted++;
+      }
+
+      var unpaidGn = dailyWorkspace.groundnuts.filter(function(r){ return !r.paid && r.customer && r.qty; });
+      var unpaidPb = dailyWorkspace.peanutbutter.filter(function(r){ return !r.paid && r.customer && r.qty; });
+      
+      for(var i=0; i<unpaidGn.length; i++){
+        var r = unpaidGn[i];
+        var qty = parseFloat(r.qty);
+        var amount = qty * state.settings.price_groundnut;
+        await api('/debts', {method:'POST', body: JSON.stringify({
+          name: r.customer,
+          product: 'groundnuts',
+          qty: qty,
+          amount: amount,
+          debt_date: dailyWorkspace.date
+        })});
+        debtorsCreated++;
+      }
+      
+      for(var i=0; i<unpaidPb.length; i++){
+        var r = unpaidPb[i];
+        var qty = parseFloat(r.qty);
+        var amount = qty * state.settings.price_pb;
+        await api('/debts', {method:'POST', body: JSON.stringify({
+          name: r.customer,
+          product: 'peanutbutter',
+          qty: qty,
+          amount: amount,
+          debt_date: dailyWorkspace.date
+        })});
+        debtorsCreated++;
+      }
+
+      await loadAll();
+      
+      var confirmHtml='<div class="card"><h2>Daily Summary</h2>';
+      confirmHtml+='<div class="metrics" style="grid-template-columns:repeat(2,1fr);">';
+      confirmHtml+=metricCard('Groundnuts Sold', gnTotal+' pieces', '');
+      confirmHtml+=metricCard('Peanut Butter Sold', pbTotal+' jars', '');
+      confirmHtml+=metricCard('Revenue', money(gnTotal*state.settings.price_groundnut + pbTotal*state.settings.price_pb), 'profit');
+      confirmHtml+=metricCard('Customers', customerCount, '');
+      confirmHtml+=metricCard('Debtors Created', debtorsCreated, 'debt');
+      confirmHtml+=metricCard('Sales Posted', salesPosted, '');
+      confirmHtml+='</div></div>';
+      confirmHtml+='<button class="btn btn-primary" id="clearWorkspaceBtn" style="background:var(--debt);">Clear today\'s workspace</button>';
+      confirmHtml+='<button class="btn btn-ghost" id="keepWorkspaceBtn" style="width:100%;margin-top:10px;">Keep workspace for now</button>';
+      
+      document.getElementById('app').innerHTML = wrapPanel('daily', confirmHtml);
+      
+      document.getElementById('clearWorkspaceBtn').addEventListener('click', function(){
+        dailyWorkspace = { date: todayStr(), groundnuts: [], peanutbutter: [] };
+        saveDailyWorkspace();
+        renderDaily();
+        showToast('Workspace cleared');
+      });
+      
+      document.getElementById('keepWorkspaceBtn').addEventListener('click', function(){
+        renderDaily();
+      });
+      
+    }catch(e){ showToast(e.message); }
+  });
+}
+
 /* ---------- NAV ---------- */
 function switchTab(tab){
   activeTab = tab;
@@ -899,6 +1165,7 @@ function switchTab(tab){
   else if(tab==='sales') renderSales();
   else if(tab==='debts') renderDebts();
   else if(tab==='expenses') renderExpenses();
+  else if(tab==='daily') renderDaily();
   else if(tab==='reports') renderReports();
 }
 function moveIndicator(){
